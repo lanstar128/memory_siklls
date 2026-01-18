@@ -14,7 +14,7 @@
 - **经验流失**：花了一下午调试出的复杂方案，关掉 IDE 就再也找不到了。
 - **多端割裂**：家里电脑调好的 Prompt 和习惯，到了公司电脑又要重新调教。
 
-**AI Memory Skills** 正是为此而生。它基于 [Agent Skills](https://agentskills.io) 开放标准，为你的 AI 终端（Gemini CLI, Claude Code, OpenAI Codex 等）外挂一个**持久化、可同步、能成长**的大脑。
+**AI Memory Skills** 正是为此而生。它基于 [Agent Skills](https://agentskills.io) 开放标准，为你的 AI 环境（Antigravity IDE, Gemini CLI, Claude Code 等）外挂一个**持久化、可同步、能成长**的大脑。
 
 ---
 
@@ -74,14 +74,15 @@ curl -fsSL https://raw.githubusercontent.com/lanstar128/memory_siklls/main/insta
 
 ## 🌐 支持平台
 
-本技能包完全遵循 `Agent Skills` 规范，支持所有兼容该标准的 AI 终端：
+本技能包完全遵循 `Agent Skills` 规范，支持所有兼容该标准的 AI 环境：
 
 | 平台 | 兼容性 | 说明 |
 |------|-------|------|
-| **Gemini CLI** | ⭐ Perfect | 原生开发环境，体验最佳 |
-| **Claude Code** | ⭐ Perfect | 完美支持技能调用 |
-| **OpenAI Codex** | ⭐ Perfect | 支持标准 Agent 协议 |
-| **iFlow CLI** | ✅ Good | 通过 SubAgent 兼容 |
+| **Antigravity IDE** | ⭐ Perfect | 唯一支持**无损归档** (保留所有对话细节和元数据) |
+| **Gemini CLI** | ✅ Compatible | 支持通用技能 (自我转述归档) |
+| **Claude Code** | ✅ Compatible | 支持通用技能 (自我转述归档) |
+| **OpenAI Codex** | ✅ Compatible | 支持通用技能 (自我转述归档) |
+| **iFlow CLI** | ✅ Compatible | 通过 SubAgent 兼容 |
 
 ---
 
