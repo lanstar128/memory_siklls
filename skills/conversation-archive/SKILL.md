@@ -35,10 +35,10 @@ metadata:
 ---
 
 ## 二、执行流程
-检查当前环境或询问用户是否使用 Gemini CLI / Antigravity IDE。
+检查当前环境或询问用户是否使用 Antigravity IDE。
 
-### 🟡 情况 A：Gemini CLI / Antigravity IDE (文件导入模式)
-**适用条件**：当前是 Gemini CLI 或用户可以手动导出 `.md` 文件。
+### 🟡 情况 A：Antigravity IDE (文件导入模式)
+**适用条件**：当前是 Antigravity IDE 或用户可以手动导出 `.md` 文件。
 
 #### 1. 引导用户导出
 ```
