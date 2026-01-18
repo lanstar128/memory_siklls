@@ -14,6 +14,11 @@ metadata:
 
 本技能指导 AI 在用户完成工作时，引导用户导出对话并进行归档处理。
 
+> [!IMPORTANT]
+> 本技能支持两种模式：
+> 1.  **文件导入模式 (推荐)**：适用于 Gemini CLI，用户手动导出 Markdown 文件，完整保留对话。
+> 2.  **自我转述模式 (兼容)**：适用于 Claude Code / Codex / iFlow 等不支持导出的平台，由 AI 自动总结并写入文件。
+
 ---
 
 ## 一、触发条件
@@ -30,115 +35,143 @@ metadata:
 ---
 
 ## 二、执行流程
+检查当前环境或询问用户是否使用 Gemini CLI / Antigravity IDE。
 
-### 2.1 模式选择
+### 🟡 情况 A：Gemini CLI / Antigravity IDE (文件导入模式)
+**适用条件**：当前是 Gemini CLI 或用户可以手动导出 `.md` 文件。
 
-根据上下文自动选择模式：
+#### 1. 引导用户导出
+```
+检测到您准备结束本次对话。是否需要归档？
 
-- **模式 A：标准归档 (AI Self-Archive)**
-  - 适用：Gemini CLI, Claude Code, Codex, iFlow
-  - 触发：默认模式。当用户没有提供导出文件，仅要求"保存"或"归档"时。
-  
-- **模式 B：文件导入 (File Import)**
-  - 适用：Antigravity IDE (或手动导出文件的用户)
-  - 触发：用户说"我导出了文件"、"文件在这里"或提供了文件路径。
-
----
-
-### 2.2 模式 A：标准归档 (默认)
-
-**步骤 1：生成归档内容**
-AI 总结当前上下文，生成 Markdown 内容（直接写入目标文件）：
-
-- **路径**：`~/.gemini/memory/conversations/<YYYY-MM>/<YYYY-MM-DD>_<标题>.md`
-  *(标题：使用连字符命名，如 `fix-react-hook-error`)*
-- **内容格式**：
-  ```markdown
-  ---
-  archived_at: <当前时间 YYYY-MM-DD HH:MM>
-  title: <对话标题>
-  ---
-  
-  # <对话标题>
-  
-  ## 📌 摘要
-  <100字以内的对话总结，包含核心解决的问题>
-  
-  ## 📝 关键交互记录
-  
-  ### User Input
-  <复述用户的关键提问或报错信息>
-  
-  ### AI Response
-  <复述 AI 的关键对策或代码方案>
-  
-  (仅保留关键轮次，去除闲聊)
-  ```
-
-**步骤 2：生成元数据索引**
-创建临时索引文件 `/tmp/archive_meta.json`：
-```json
-{
-  "conversation_title": "<对话标题>",
-  "archive_time": "<当前时间 YYYY-MM-DD HH:MM>",
-  "turns": [
-    {"index": 1, "time": "", "first_line": "<摘要第一句>"}
-  ]
-}
+如需归档，请：
+1. 点击对话窗口右上角的 "Export" 按钮
+2. 保存到默认位置 (~/Downloads/)
+3. 完成后告诉我"导出好了"
 ```
 
-**步骤 3：入库与同步**
+#### 2. 检测导出文件
+用户确认后，扫描下载目录：
 ```bash
-# 添加到索引
-python3 ~/.gemini/skills/conversation-archive/scripts/db_manager.py \
-  --action add \
-  --metadata /tmp/archive_meta.json \
-  --file ~/.gemini/memory/conversations/<YYYY-MM>/<YYYY-MM-DD>_<标题>.md
-
-# 清理临时文件
-rm /tmp/archive_meta.json
-
-# Git 同步
-git -C ~/.gemini add . && git -C ~/.gemini commit -m "auto: archive <标题>" && git -C ~/.gemini push
+ls -lt ~/Downloads/*.md | head -5
 ```
+- 查找最近 5 分钟内修改的 `.md` 文件
+- 文件名格式：`{对话标题}.md`
 
----
+#### 3. 提取时间戳元数据
+> [!CAUTION]
+> **关键步骤：时间戳必须从 ADDITIONAL_METADATA 中提取！**
 
-### 2.3 模式 B：文件导入 (IDE 增强)
-
-**步骤 1：引导/扫描**
+每条用户消息的 `<ADDITIONAL_METADATA>` 块中包含：
+```xml
+<ADDITIONAL_METADATA>
+The current local time is: 2026-01-18T11:43:11+08:00
+...
+</ADDITIONAL_METADATA>
 ```
-检测到导出文件。正在处理...
-```
-扫描 `~/Downloads/` 下最新的 `.md` 文件。
+**输出 JSON 格式**（同上，略）。
 
-**步骤 2：提取元数据**
-从文件内容或 `ADDITIONAL_METADATA` 提取时间戳和标题，生成 `/tmp/archive_metadata.json`。
-*(参考 `scripts/inject_timestamps.py` 的逻辑)*
-
-**步骤 3：注入与归档**
+#### 4. 调用脚本处理
+**步骤 1：创建临时元数据文件**
 ```bash
-# 注入时间戳并移动到全局目录
+cat > /tmp/archive_metadata.json << 'EOF'
+{上一步的 JSON 内容}
+EOF
+```
+
+**步骤 2：执行归档脚本**
+```bash
+# 注入时间戳并保存到全局目录
 python3 ~/.gemini/skills/conversation-archive/scripts/inject_timestamps.py \
-  --source <源文件> \
+  --source ~/Downloads/对话标题.md \
   --metadata /tmp/archive_metadata.json \
   --output ~/.gemini/memory/conversations/
 
-# 更新索引
+# 更新全局索引
 python3 ~/.gemini/skills/conversation-archive/scripts/db_manager.py \
   --action add \
   --metadata /tmp/archive_metadata.json \
   --file <输出的归档文件路径>
 
-# 去重检查 (仅在此模式下执行，防止多次导出)
-python3 ~/.gemini/skills/conversation-archive/scripts/dedup_archives.py \
-  --dir ~/.gemini/memory/conversations/<YYYY-MM>/
-
-# 清理
+# 清理临时文件
 rm /tmp/archive_metadata.json
 
-# Git 同步
-git -C ~/.gemini add . && git -C ~/.gemini commit -m "auto: import <标题>" && git -C ~/.gemini push
+# 去重检查
+python3 ~/.gemini/skills/conversation-archive/scripts/dedup_archives.py \
+  --dir ~/.gemini/memory/conversations/<年-月>/
+```
+
+---
+
+### 🟢 情况 B：其他平台 (自我转述模式)
+**适用条件**：Claude Code, Codex, iFlow，或无法导出文件的环境。
+
+#### 1. 生成对话摘要
+AI 自动读取当前上下文，总结以下内容：
+- **日期**：当前日期 (YYYY-MM-DD)
+- **标题**：为对话起一个简短标题
+- **摘要**：核心问题、解决步骤、关键代码
+- **对话原文**：尽可能复述关键的问答对
+
+#### 2. 写入归档文件
+直接将内容写入文件（注意：文件名必须包含日期，如 `2026-01-19_Title.md`）：
+
+```bash
+mkdir -p ~/.gemini/memory/conversations/$(date +%Y-%m)
+
+cat > ~/.gemini/memory/conversations/$(date +%Y-%m)/$(date +%Y-%m-%d)_<标题>.md << 'EOF'
+---
+date: $(date +%Y-%m-%d %H:%M)
+source: ai-self-archive
+---
+# <标题>
+
+## 摘要
+<摘要内容>
+
+## 对话记录
+<AI 复述的对话内容>
+EOF
+```
+
+#### 3. 更新索引
+```bash
+# 手动构造 JSON 元数据传递给 db_manager
+cat > /tmp/archive_metadata.json << 'EOF'
+{
+  "conversation_title": "<标题>",
+  "archive_time": "$(date +%Y-%m-%d %H:%M)",
+  "project_path": "$(pwd)",
+  "turns": [] 
+}
+EOF
+
+python3 ~/.gemini/skills/conversation-archive/scripts/db_manager.py \
+  --action add \
+  --metadata /tmp/archive_metadata.json \
+  --file ~/.gemini/memory/conversations/$(date +%Y-%m)/$(date +%Y-%m-%d)_<标题>.md
+
+rm /tmp/archive_metadata.json
+```
+
+---
+
+### 🔄 通用后续步骤 (所有模式)
+
+**自动同步到远程**
+```bash
+git -C ~/.gemini add . && git -C ~/.gemini commit -m "auto: archive conversation" && git -C ~/.gemini push
+```
+
+### 2.5 确认完成
+```
+✅ 对话已归档
+
+位置: ~/.gemini/memory/conversations/2026-01/2026-01-18_对话标题.md
+对话轮数: N 轮
+时间范围: 09:55 - 11:50
+
+全局索引已更新，可随时检索历史对话。
 ```
 
 ---
