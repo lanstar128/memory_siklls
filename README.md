@@ -64,11 +64,7 @@
 2. 将 `GEMINI.md` 合并到 `~/.gemini/GEMINI.md`
 3. 可选：安装语义搜索依赖 `pip install sentence-transformers`
 
-## 相关文档
 
-- [复盘分析](docs/memory_skill_post_mortem.md) - 方案调研与实现过程
-- [解决方案设计](docs/agent_skills_memory_solution.md) - 完整架构设计
-- [经验沉淀设计](docs/knowledge_deposit_skill_design.md) - 沉淀技能设计
 
 ---
 *Created: 2026-01-18*
