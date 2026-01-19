@@ -4,7 +4,7 @@ description: |
   对话归档技能。在用户完成工作或明确要求保存时，引导用户导出对话并归档。
   触发条件：用户说"保存对话"/"归档"/"记录一下"，或检测到离开意图（"今天就到这"/"提交代码吧"）。
   用于指导 AI 如何正确地归档对话记录，包括时间戳提取和索引管理。
-compatibility: Claude Code, Gemini CLI, OpenAI Codex, iFlow CLI
+compatibility: Antigravity IDE, Claude Code, Gemini CLI, OpenAI Codex, iFlow CLI
 metadata:
   author: lanstar128
   version: "1.0"
@@ -16,7 +16,7 @@ metadata:
 
 > [!IMPORTANT]
 > 本技能支持两种模式：
-> 1.  **文件导入模式 (推荐)**：适用于 Gemini CLI，用户手动导出 Markdown 文件，完整保留对话。
+> 1.  **文件导入模式 (推荐)**：适用于 Antigravity IDE，用户手动导出 Markdown 文件，完整保留对话。
 > 2.  **自我转述模式 (兼容)**：适用于 Claude Code / Codex / iFlow 等不支持导出的平台，由 AI 自动总结并写入文件。
 
 ---
@@ -122,7 +122,7 @@ python3 ~/.gemini/skills/conversation-archive/scripts/dedup_archives.py \
 ---
 
 ### 🟢 情况 B：其他平台 (自我转述模式)
-**适用条件**：Claude Code, Codex, iFlow，或无法导出文件的环境。
+**适用条件**：gemini CLI, Claude Code, Codex, iFlow，或无法导出文件的环境。
 
 #### 1. 生成对话摘要
 AI 自动读取当前上下文，总结以下内容：
