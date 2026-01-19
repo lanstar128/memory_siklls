@@ -2,9 +2,42 @@
 # Memory Skills 安装脚本
 # 支持: Claude Code, Gemini CLI, OpenAI Codex, iFlow CLI
 # 项目地址: https://github.com/lanstar128/memory_siklls
+#
+# 用法:
+#   curl -fsSL https://raw.githubusercontent.com/.../install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/.../install.sh | bash -s -- --with-semantic
+#   curl -fsSL https://raw.githubusercontent.com/.../install.sh | bash -s -- --no-semantic
 
 REPO_URL="https://github.com/lanstar128/memory_siklls.git"
-TMP_DIR="/tmp/memory_skills_install"
+
+# 临时目录：优先使用 $TMPDIR，回退到 $HOME/.cache（兼容 Termux）
+if [ -n "$TMPDIR" ] && [ -w "$TMPDIR" ]; then
+    TMP_DIR="$TMPDIR/memory_skills_install"
+elif [ -w "/tmp" ]; then
+    TMP_DIR="/tmp/memory_skills_install"
+else
+    TMP_DIR="$HOME/.cache/memory_skills_install"
+fi
+
+# 命令行参数
+INSTALL_SEMANTIC=""  # 空=询问, yes=安装, no=跳过
+
+# 解析参数
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --with-semantic)
+            INSTALL_SEMANTIC="yes"
+            shift
+            ;;
+        --no-semantic)
+            INSTALL_SEMANTIC="no"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 # 颜色输出
 RED='\033[0;31m'
@@ -87,6 +120,10 @@ check_dependencies() {
 # 下载技能包
 download_skills() {
     echo -e "${YELLOW}下载技能包...${NC}"
+    echo "  临时目录: $TMP_DIR"
+    
+    # 确保临时目录的父目录存在
+    mkdir -p "$(dirname "$TMP_DIR")"
     
     # 清理临时目录
     rm -rf "$TMP_DIR"
@@ -156,11 +193,10 @@ verify_installation() {
         echo -e "${RED}✗ 安装验证失败：没有找到任何技能${NC}"
         return 1
     fi
-    echo ""
 }
 
-# 询问是否安装语义搜索依赖
-ask_semantic_search() {
+# 安装语义搜索依赖
+install_semantic_search() {
     echo ""
     echo -e "${BLUE}========================================${NC}"
     echo -e "${BLUE}  📦 可选：语义搜索增强${NC}"
@@ -169,43 +205,60 @@ ask_semantic_search() {
     echo "语义搜索可以让 AI 更智能地检索你的历史对话。"
     echo "需要安装 sentence-transformers 库（约 500MB）"
     echo ""
-    echo -e "${YELLOW}是否安装语义搜索依赖？${NC}"
-    echo "  [y] 是，立即安装"
-    echo "  [n] 否，稍后手动安装"
-    echo "  [s] 跳过（不显示安装命令）"
-    echo ""
     
-    # 非交互模式检测
-    if [ ! -t 0 ]; then
-        echo -e "${YELLOW}检测到非交互模式，跳过语义搜索安装${NC}"
+    local do_install=""
+    
+    # 根据命令行参数或交互决定
+    if [ "$INSTALL_SEMANTIC" = "yes" ]; then
+        do_install="yes"
+        echo -e "${YELLOW}已通过 --with-semantic 参数指定安装${NC}"
+    elif [ "$INSTALL_SEMANTIC" = "no" ]; then
+        do_install="no"
+        echo -e "${YELLOW}已通过 --no-semantic 参数跳过${NC}"
+    elif [ -t 0 ]; then
+        # 交互模式：询问用户
+        echo -e "${YELLOW}是否安装语义搜索依赖？${NC}"
+        echo "  [y] 是，立即安装"
+        echo "  [n] 否，稍后手动安装"
         echo ""
-        echo "如需安装，请稍后运行："
-        echo -e "  ${GREEN}pip3 install sentence-transformers${NC}"
+        read -r -p "请选择 [y/n]: " choice
+        case "$choice" in
+            y|Y) do_install="yes" ;;
+            *) do_install="no" ;;
+        esac
+    else
+        # 非交互模式且无参数：显示如何安装
+        echo -e "${YELLOW}非交互模式，跳过语义搜索安装${NC}"
+        echo ""
+        echo "如需安装语义搜索，请使用以下方式之一："
+        echo -e "  ${GREEN}方式1: 重新运行安装脚本并添加参数${NC}"
+        echo "    curl -fsSL https://raw.githubusercontent.com/lanstar128/memory_siklls/main/install.sh | bash -s -- --with-semantic"
+        echo ""
+        echo -e "  ${GREEN}方式2: 手动安装${NC}"
+        echo "    pip3 install sentence-transformers"
         echo ""
         return
     fi
     
-    read -r -p "请选择 [y/n/s]: " choice
-    case "$choice" in
-        y|Y)
+    # 执行安装
+    if [ "$do_install" = "yes" ]; then
+        echo ""
+        echo -e "${YELLOW}正在安装 sentence-transformers...${NC}"
+        echo "（这可能需要几分钟，取决于网络速度）"
+        echo ""
+        if pip3 install sentence-transformers; then
             echo ""
-            echo -e "${YELLOW}正在安装 sentence-transformers...${NC}"
-            if pip3 install sentence-transformers; then
-                echo -e "${GREEN}✓ 语义搜索依赖安装成功！${NC}"
-            else
-                echo -e "${RED}✗ 安装失败，请稍后手动安装：${NC}"
-                echo "  pip3 install sentence-transformers"
-            fi
-            ;;
-        s|S)
-            echo -e "${YELLOW}已跳过${NC}"
-            ;;
-        *)
+            echo -e "${GREEN}✓ 语义搜索依赖安装成功！${NC}"
+        else
             echo ""
-            echo "如需安装，请稍后运行："
-            echo -e "  ${GREEN}pip3 install sentence-transformers${NC}"
-            ;;
-    esac
+            echo -e "${RED}✗ 安装失败${NC}"
+            echo "  请稍后手动安装: pip3 install sentence-transformers"
+        fi
+    else
+        echo ""
+        echo "如需安装，请稍后运行："
+        echo -e "  ${GREEN}pip3 install sentence-transformers${NC}"
+    fi
     echo ""
 }
 
@@ -245,7 +298,7 @@ main() {
     fi
     
     cleanup
-    ask_semantic_search
+    install_semantic_search
     show_complete
 }
 
