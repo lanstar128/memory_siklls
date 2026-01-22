@@ -1,0 +1,25 @@
+# 发布到公开仓库时需要排除的文件和目录
+
+# 敏感配置
+secrets.env
+.env.local
+*.secret.*
+config.local.*
+
+# 内部文档
+internal-docs/
+private-notes/
+temp/
+
+# 私有技能
+skills/android-media-finder
+
+# 开发配置
+.vscode/
+.idea/
+*.local.md
+
+# 临时文件
+*.tmp
+*.log
+.DS_Store

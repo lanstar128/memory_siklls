@@ -22,14 +22,24 @@ metadata:
 
 ## 二、统一路径配置
 
-> [!IMPORTANT]
-> 软连接已统一，所有工具使用同一技能库。
+### 2.1 确定根目录
+
+AI 应根据当前运行环境确定根目录 (`ROOT_DIR`)：
+
+| 环境 | 根目录路径 |
+|------|-----------|
+| **Antigravity / Gemini CLI** | `~/.gemini` |
+| **Claude Code** | `~/.claude` |
+| **Codex CLI** | `~/.codex` |
+| **iFlow CLI** | `~/.iflow` |
+
+### 2.2 路径变量
 
 | 变量 | 路径 |
 |------|------|
-| `SKILL_BASE` | `~/.gemini/skills/conversation-archive` |
-| `MEMORY_BASE` | `~/.gemini/memory/conversations` |
-| `TMP_DIR` | `~/.gemini/tmp` |
+| `SKILL_BASE` | `${ROOT_DIR}/skills/conversation-archive` |
+| `MEMORY_BASE` | `${ROOT_DIR}/memory/conversations` |
+| `TMP_DIR` | `${ROOT_DIR}/tmp` |
 
 ---
 
@@ -200,7 +210,9 @@ rm $TMP_DIR/archive_metadata.json
 ### 7.1 Git 同步
 
 ```bash
-cd ~/.gemini && git add . && git commit -m "auto: archive conversation" && git push
+```bash
+cd ${ROOT_DIR} && git add . && git commit -m "auto: archive conversation" && git push
+```
 ```
 
 ### 7.2 确认完成
@@ -208,7 +220,7 @@ cd ~/.gemini && git add . && git commit -m "auto: archive conversation" && git p
 ```
 ✅ 对话已归档
 
-位置: ~/.gemini/memory/conversations/2026-01/2026-01-18_对话标题.md
+位置: ${MEMORY_BASE}/2026-01/2026-01-18_对话标题.md
 对话轮数: N 轮
 时间范围: 09:55 - 11:50
 
@@ -231,7 +243,8 @@ python3 $SKILL_BASE/scripts/db_manager.py \
 ## 九、存储结构
 
 ```
-~/.gemini/memory/
+```
+${ROOT_DIR}/memory/
 ├── conversations/
 │   ├── 2026-01/
 │   │   └── 2026-01-18_对话标题.md

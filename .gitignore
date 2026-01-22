@@ -1,3 +1,8 @@
 .DS_Store
-*.yaml
+*.pyc
+__pycache__/
+.venv/
+.vscode/
+.idea/
+*.log
 .tmp.driveupload/

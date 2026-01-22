@@ -14,6 +14,18 @@ metadata:
 
 统一检索历史对话（conversation-archive）和经验沉淀（knowledge-deposit）。
 
+## 零、确定根目录
+
+AI 应根据当前运行环境确定根目录 (`ROOT_DIR`) 和技能目录 (`SKILL_ROOT`)：
+
+| 环境 | 根目录 (`ROOT_DIR`) | 技能目录 (`SKILL_ROOT`) |
+|------|---------------------|------------------------|
+| **Antigravity** | `~/.gemini` | `~/.gemini/antigravity/skills` |
+| **Gemini CLI** | `~/.gemini` | `~/.gemini/skills` |
+| **Claude Code** | `~/.claude` | `~/.claude/skills` |
+| **Codex CLI** | `~/.codex` | `~/.codex/skills` |
+| **iFlow CLI** | `~/.iflow` | `~/.iflow/skills` |
+
 ---
 
 ## 一、触发条件
@@ -54,7 +66,7 @@ which python3
 
 ### 3.1 语义搜索
 ```bash
-python3 ~/.gemini/skills/memory-recall/scripts/search.py \
+python3 ${SKILL_ROOT}/memory-recall/scripts/search.py \
   --query "对话归档怎么实现的" \
   --top 5
 ```
@@ -73,13 +85,13 @@ python3 ~/.gemini/skills/memory-recall/scripts/search.py \
     描述: 经验沉淀技能...
     相关度: 0.78
     类型: 技能文件
-    文件: ~/.gemini/skills/knowledge-deposit/SKILL.md
+    文件: ${SKILL_ROOT}/knowledge-deposit/SKILL.md
 ```
 
 ### 3.2 查看详细内容
 ```bash
 # 按 ID 显示原文（脚本直接读取，不经 AI 处理）
-python3 ~/.gemini/skills/memory-recall/scripts/search.py \
+python3 ${SKILL_ROOT}/memory-recall/scripts/search.py \
   --show 1
 ```
 
@@ -105,14 +117,14 @@ python3 ~/.gemini/skills/memory-recall/scripts/search.py \
 | 来源 | 内容 | 匹配字段 |
 |------|------|---------|
 | 对话归档 | `.agent/memory/conversations/` + SQLite | 标题、首句 |
-| 经验沉淀 | `~/.gemini/skills/` | name、description |
+| 经验沉淀 | `${SKILL_ROOT}/` | name、description |
 | 项目技能 | `<项目>/.agent/skills/` | name、description |
 
 ---
 
 ## 五、模型管理
 
-- **模型位置**：`~/.gemini/models/all-MiniLM-L6-v2/`
+- **模型位置**：`${ROOT_DIR}/models/all-MiniLM-L6-v2/`
 - **首次下载**：约 80MB，自动完成
 - **离线使用**：下载后可离线运行
 

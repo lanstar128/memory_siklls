@@ -58,15 +58,29 @@ metadata:
 
 ## 三、检索对比
 
-在创建新技能前，必须检索现有技能库：
+在创建新技能前，必须检索现有技能库。
 
-### 3.1 检索步骤
+### 3.1 确定技能根目录
 
-1. 列出目录 `~/.gemini/skills/`
+AI 应根据当前运行环境确定技能根目录 (`SKILL_ROOT`)：
+
+| 环境 | 根目录路径 |
+|------|-----------|
+| **Antigravity** | `~/.gemini/antigravity/skills/` |
+| **Gemini CLI** | `~/.gemini/skills/` |
+| **Claude Code** | `~/.claude/skills/` |
+| **Codex CLI** | `~/.codex/skills/` |
+| **iFlow CLI** | `~/.iflow/skills/` |
+
+> 如果无法确定环境，默认尝试 `~/.gemini/skills/` 和 `~/.claude/skills/`。
+
+### 3.2 检索步骤
+
+1. 列出 `${SKILL_ROOT}` 目录
 2. 读取每个子目录中的 `SKILL.md` 文件的 YAML 头部（只需 `description` 字段）
 3. 对比新知识的描述与现有技能的 `description`
 
-### 3.2 判断逻辑
+### 3.3 判断逻辑
 
 | 情况 | 操作 |
 |-----|------|
@@ -84,7 +98,7 @@ metadata:
 建议将这次解决 [问题描述] 的方案保存为技能。
 
 技能名称: [建议的名称]
-保存位置: ~/.gemini/skills/[技能名称]/
+保存位置: ${SKILL_ROOT}/[技能名称]/
 
 摘要:
 - 问题: [简述]
@@ -109,7 +123,7 @@ metadata:
 ### 5.2 文件结构
 
 ```
-~/.gemini/skills/[技能名称]/
+${SKILL_ROOT}/[技能名称]/
 └── SKILL.md
 ```
 
@@ -156,7 +170,7 @@ last_verified: [当前日期 YYYY-MM-DD]
 ```
 ✅ 技能已保存
 
-位置: ~/.gemini/skills/[技能名称]/SKILL.md
+位置: ${SKILL_ROOT}/[技能名称]/SKILL.md
 下次遇到类似问题时会自动激活此技能。
 ```
 
