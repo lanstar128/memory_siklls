@@ -1,8 +1,10 @@
+# 系统文件
 .DS_Store
-*.pyc
-__pycache__/
-.venv/
-.vscode/
-.idea/
 *.log
-.tmp.driveupload/
+
+# 模型文件（太大，不同步）
+models/
+
+# Python 缓存
+__pycache__/
+*.pyc

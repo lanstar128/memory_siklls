@@ -1,103 +1,157 @@
 #!/bin/bash
+# AI Memory System 安装器
+# 用法: curl -sSL https://raw.githubusercontent.com/lanstar128/AI_memory_siklls/main/install.sh | bash
+
 set -e
 
-echo "🧠 AI Memory Skills 安装程序"
-echo "================================"
+# 颜色输出
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-# 检测操作系统
-OS="$(uname -s)"
-if [[ "$OS" != "Darwin" && "$OS" != "Linux" ]]; then
-    echo "❌ 不支持的操作系统: $OS"
-    echo "本安装脚本仅支持 macOS 和 Linux"
+MEMORY_ROOT="$HOME/.ai-memory"
+SKILLS_REPO="https://github.com/lanstar128/AI_memory_siklls.git"
+
+echo ""
+echo -e "${BLUE}🧠 AI Memory System 安装器${NC}"
+echo "=============================="
+echo ""
+
+# 检查 Git
+if ! command -v git &> /dev/null; then
+    echo -e "${RED}❌ 未检测到 Git，请先安装 Git${NC}"
     exit 1
 fi
 
-echo "✅ 检测到操作系统: $OS"
+# 创建根目录
+mkdir -p "$MEMORY_ROOT"
 
-# 检测 AI 环境
-INSTALL_PATHS=()
+# ==================== 技能仓库 ====================
+echo -e "${YELLOW}[1/4] 安装技能仓库...${NC}"
 
-if [ -d "$HOME/.gemini/antigravity" ]; then
-    INSTALL_PATHS+=("$HOME/.gemini/antigravity/skills")
-    echo "✅ 检测到 Antigravity IDE"
-fi
-
-if [ -d "$HOME/.gemini" ]; then
-    INSTALL_PATHS+=("$HOME/.gemini/skills")
-    echo "✅ 检测到 Gemini CLI 环境"
-fi
-
-if [ -d "$HOME/.codex" ]; then
-    INSTALL_PATHS+=("$HOME/.codex/skills")
-    echo "✅ 检测到 Codex CLI 环境"
-fi
-
-if [ -d "$HOME/.iflow" ]; then
-    INSTALL_PATHS+=("$HOME/.iflow/skills")
-    echo "✅ 检测到 iFlow CLI 环境"
-fi
-
-if [ ${#INSTALL_PATHS[@]} -eq 0 ]; then
-    echo "⚠️  未检测到任何支持的 AI 环境"
-    echo "请先安装 Antigravity IDE、Gemini CLI、Codex 或 iFlow"
-    exit 1
-fi
-
-echo ""
-echo "将安装到以下位置:"
-for path in "${INSTALL_PATHS[@]}"; do
-    echo "  - $path"
-done
-
-echo ""
-read -p "是否继续安装? (y/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "❌ 安装已取消"
-    exit 0
-fi
-
-# 下载或使用本地文件
-if [ -d "./skills" ]; then
-    echo "✅ 使用本地技能文件"
-    SKILLS_DIR="./skills"
+if [ -d "$MEMORY_ROOT/skills/.git" ]; then
+    echo "  技能仓库已存在，正在更新..."
+    git -C "$MEMORY_ROOT/skills" pull --quiet
 else
-    echo "📥 从 GitHub 下载..."
-    TEMP_DIR=$(mktemp -d)
-    git clone --depth 1 https://github.com/lanstar128/ai-memory-skills.git "$TEMP_DIR" || {
-        echo "❌ 下载失败"
-        exit 1
-    }
-    SKILLS_DIR="$TEMP_DIR/skills"
+    if [ -d "$MEMORY_ROOT/skills" ]; then
+        mv "$MEMORY_ROOT/skills" "$MEMORY_ROOT/skills.bak.$(date +%s)"
+        echo "  已备份旧的 skills 目录"
+    fi
+    git clone --quiet "$SKILLS_REPO" "$MEMORY_ROOT/skills"
+fi
+echo -e "  ${GREEN}✓${NC} 技能仓库就绪"
+
+# ==================== 私人数据仓库 ====================
+echo ""
+echo -e "${YELLOW}[2/4] 配置私人数据仓库...${NC}"
+
+if [ -d "$MEMORY_ROOT/data/.git" ]; then
+    echo -e "  ${GREEN}✓${NC} 私人数据仓库已存在"
+else
+    echo ""
+    echo "  请输入你的私人记忆仓库地址"
+    echo "  （如果没有，请先在 GitHub/Gitee 创建一个空的私有仓库）"
+    echo ""
+    read -p "  仓库地址 (直接回车跳过): " data_repo
+
+    if [ -n "$data_repo" ]; then
+        mkdir -p "$MEMORY_ROOT/data"
+        if git clone --quiet "$data_repo" "$MEMORY_ROOT/data" 2>/dev/null; then
+            echo -e "  ${GREEN}✓${NC} 私人数据仓库已克隆"
+        else
+            # 仓库是空的，需要初始化
+            cd "$MEMORY_ROOT/data"
+            git init --quiet
+            git remote add origin "$data_repo"
+            
+            # 创建初始目录结构
+            mkdir -p conversations knowledge
+            cat > .gitignore << 'EOF'
+.DS_Store
+*.log
+__pycache__/
+EOF
+            git add .
+            git commit -m "Initial: AI memory data" --quiet
+            git branch -M main
+            echo -e "  ${GREEN}✓${NC} 私人数据仓库已初始化"
+            echo -e "  ${YELLOW}⚠️${NC} 请稍后手动执行 git push 推送到远程"
+        fi
+    else
+        echo "  跳过私人仓库配置"
+        mkdir -p "$MEMORY_ROOT/data/conversations" "$MEMORY_ROOT/data/knowledge"
+        echo -e "  ${YELLOW}⚠️${NC} 已创建本地目录，稍后可手动关联仓库"
+    fi
 fi
 
-# 安装技能
-for install_path in "${INSTALL_PATHS[@]}"; do
-    echo "📦 安装到 $install_path ..."
-    mkdir -p "$install_path"
-    cp -r "$SKILLS_DIR"/* "$install_path/"
-    echo "✅ 完成"
-done
+# ==================== 创建符号链接 ====================
+echo ""
+echo -e "${YELLOW}[3/4] 创建 AI 工具链接...${NC}"
 
-# 创建 memory 目录
-MEMORY_DIR="$HOME/.gemini/memory/conversations"
-if [ ! -d "$MEMORY_DIR" ]; then
-    echo "📂 创建记忆存储目录: $MEMORY_DIR"
-    mkdir -p "$MEMORY_DIR"
+create_link() {
+    local tool_dir=$1
+    local target=$2
+    local name=$3
+    
+    if [ -d "$tool_dir" ]; then
+        # 如果目标已存在且不是符号链接，备份它
+        if [ -d "$target" ] && [ ! -L "$target" ]; then
+            mv "$target" "${target}.bak.$(date +%s)"
+        fi
+        # 确保父目录存在
+        mkdir -p "$(dirname "$target")"
+        # 创建符号链接
+        ln -sf "$MEMORY_ROOT/skills/skills" "$target"
+        echo -e "  ${GREEN}✓${NC} $name"
+    fi
+}
+
+# Gemini CLI
+if [ -d "$HOME/.gemini" ]; then
+    create_link "$HOME/.gemini" "$HOME/.gemini/skills" "Gemini CLI"
 fi
 
+# Antigravity IDE
+if [ -d "$HOME/.gemini/antigravity" ]; then
+    create_link "$HOME/.gemini/antigravity" "$HOME/.gemini/antigravity/skills" "Antigravity IDE"
+fi
+
+# Claude Code
+if [ -d "$HOME/.claude" ]; then
+    create_link "$HOME/.claude" "$HOME/.claude/skills" "Claude Code"
+fi
+
+# OpenAI Codex
+if [ -d "$HOME/.codex" ]; then
+    create_link "$HOME/.codex" "$HOME/.codex/skills" "Codex CLI"
+fi
+
+# iFlow
+if [ -d "$HOME/.iflow" ]; then
+    create_link "$HOME/.iflow" "$HOME/.iflow/skills" "iFlow CLI"
+fi
+
+# ==================== 创建模型目录 ====================
 echo ""
-echo "✅ 安装完成！"
+echo -e "${YELLOW}[4/4] 初始化配置...${NC}"
+mkdir -p "$MEMORY_ROOT/models"
+echo -e "  ${GREEN}✓${NC} 模型目录就绪"
+
+# ==================== 完成 ====================
 echo ""
-echo "📚 已安装的技能:"
-echo "  - conversation-archive (对话归档)"
-echo "  - memory-recall (记忆检索)"
-echo "  - knowledge-deposit (经验沉淀)"
-echo "  - memory-sync (跨设备同步)"
+echo "=============================="
+echo -e "${GREEN}✅ 安装完成！${NC}"
 echo ""
-echo "💡 使用提示:"
-echo "  1. 在 AI 对话中说 '保存对话' 即可归档"
-echo "  2. 说 '我们之前讨论过...' 触发记忆检索"
-echo "  3. 对话数据存储在: $MEMORY_DIR"
+echo "目录结构："
+echo "  ~/.ai-memory/"
+echo "  ├── skills/    ← 技能代码"
+echo "  ├── data/      ← 你的私人数据"
+echo "  └── models/    ← embedding 模型"
 echo ""
-echo "🔗 更多文档: https://github.com/lanstar128/ai-memory-skills"
+echo "使用方法："
+echo "  • 同步记忆：在 AI 工具中说 \"同步记忆\""
+echo "  • 拉取记忆：在 AI 工具中说 \"拉取记忆\""
+echo "  • 更新技能：在 AI 工具中说 \"更新技能\""
+echo ""

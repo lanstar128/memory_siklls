@@ -1,141 +1,90 @@
 ---
 name: memory-recall
 description: |
-  记忆检索技能。统一检索历史对话和经验沉淀，支持语义搜索。
+  记忆检索技能。统一检索历史对话和沉淀的知识，支持语义搜索。
   触发条件：用户说"我们之前讨论过"/"上次怎么解决的"/"这个项目做过什么"。
-  使用本地 embedding 模型进行语义匹配，结果展示原文。
-compatibility: Claude Code, Gemini CLI, OpenAI Codex, iFlow CLI
+compatibility: Antigravity IDE, Claude Code, Gemini CLI, OpenAI Codex, iFlow CLI
 metadata:
   author: lanstar128
-  version: "1.0"
+  version: "2.0"
 ---
 
 # 记忆检索技能
 
-统一检索历史对话（conversation-archive）和经验沉淀（knowledge-deposit）。
+统一检索历史对话和沉淀的知识。
 
-## 零、确定根目录
+## 一、路径配置
 
-AI 应根据当前运行环境确定根目录 (`ROOT_DIR`) 和技能目录 (`SKILL_ROOT`)：
-
-| 环境 | 根目录 (`ROOT_DIR`) | 技能目录 (`SKILL_ROOT`) |
-|------|---------------------|------------------------|
-| **Antigravity** | `~/.gemini` | `~/.gemini/antigravity/skills` |
-| **Gemini CLI** | `~/.gemini` | `~/.gemini/skills` |
-| **Claude Code** | `~/.claude` | `~/.claude/skills` |
-| **Codex CLI** | `~/.codex` | `~/.codex/skills` |
-| **iFlow CLI** | `~/.iflow` | `~/.iflow/skills` |
+| 变量 | 路径 |
+|------|------|
+| `DATA_DIR` | `~/.ai-memory/data` |
+| `CONVERSATIONS_DIR` | `~/.ai-memory/data/conversations` |
+| `KNOWLEDGE_DIR` | `~/.ai-memory/data/knowledge` |
+| `MODELS_DIR` | `~/.ai-memory/models` |
+| `SKILLS_DIR` | `~/.ai-memory/skills/skills` |
 
 ---
 
-## 一、触发条件
+## 二、触发条件
 
 | 触发词 | 场景 |
 |--------|------|
 | "我们之前讨论过..." | 查找历史对话 |
-| "上次这个问题怎么解决的" | 查找经验 |
+| "上次这个问题怎么解决的" | 查找知识 |
 | "这个项目我们做过什么" | 按项目过滤 |
-| "上周的对话" | 按时间范围 |
 
 ---
 
-## 二、环境检查
-
-### 2.1 Python 环境（必需）
-执行前先检查 Python 是否可用：
-```bash
-which python3
-```
-
-如果返回空，提示用户：
-```
-⚠️ 未检测到 Python3 环境。
-
-请安装 Python3（macOS 可运行）：
-  brew install python3
-
-或访问 https://www.python.org/downloads/
-```
-
-### 2.2 语义搜索依赖（可选）
-首次运行 search.py 时会自动询问用户是否安装。
-
----
-
-## 三、执行流程
+## 三、检索流程
 
 ### 3.1 语义搜索
+
 ```bash
-python3 ${SKILL_ROOT}/memory-recall/scripts/search.py \
+python3 ~/.ai-memory/skills/skills/memory-recall/scripts/search.py \
   --query "对话归档怎么实现的" \
+  --data-dir ~/.ai-memory/data \
   --top 5
 ```
 
-输出格式：
+### 3.2 输出格式
+
 ```
 找到 3 条相关记录:
 
-[1] Conversation Archive Skill Implementation (2026-01-18)
-    首句: 我准备使用这个折衷方案
+[1] 对话归档技能实现 (2026-01-18)
+    首句: 我准备使用这个折衷方案...
     相关度: 0.92
-    类型: 对话归档
-    文件: .agent/memory/conversations/2026-01/...
+    类型: 对话
+    文件: ~/.ai-memory/data/conversations/2026-01/...
 
-[2] knowledge-deposit (技能)
-    描述: 经验沉淀技能...
+[2] Git 冲突解决方法
+    描述: 多设备同步时的冲突处理...
     相关度: 0.78
-    类型: 技能文件
-    文件: ${SKILL_ROOT}/knowledge-deposit/SKILL.md
-```
-
-### 3.2 查看详细内容
-```bash
-# 按 ID 显示原文（脚本直接读取，不经 AI 处理）
-python3 ${SKILL_ROOT}/memory-recall/scripts/search.py \
-  --show 1
-```
-
-### 3.3 按条件过滤
-```bash
-# 按日期范围
---date-range "2026-01-01,2026-01-18"
-
-# 按项目路径
---project "/Users/.../memory_siklls"
-
-# 只搜索技能
---type skill
-
-# 只搜索对话
---type conversation
+    类型: 知识
+    文件: ~/.ai-memory/data/knowledge/git-conflict.md
 ```
 
 ---
 
-## 四、搜索范围
+## 四、检索范围
 
-| 来源 | 内容 | 匹配字段 |
+| 来源 | 路径 | 匹配字段 |
 |------|------|---------|
-| 对话归档 | `.agent/memory/conversations/` + SQLite | 标题、首句 |
-| 经验沉淀 | `${SKILL_ROOT}/` | name、description |
-| 项目技能 | `<项目>/.agent/skills/` | name、description |
+| 对话归档 | `~/.ai-memory/data/conversations/` | 标题、首句 |
+| 沉淀知识 | `~/.ai-memory/data/knowledge/` | 标题、内容 |
+| 全局技能 | `~/.ai-memory/skills/skills/` | name、description |
 
 ---
 
 ## 五、模型管理
 
-- **模型位置**：`${ROOT_DIR}/models/all-MiniLM-L6-v2/`
-- **首次下载**：约 80MB，自动完成
-- **离线使用**：下载后可离线运行
-
----
-
-## 六、相关脚本
-
-| 脚本 | 功能 |
+| 项目 | 说明 |
 |------|------|
-| `scripts/search.py` | 语义搜索 + 原文展示 |
+| 模型路径 | `~/.ai-memory/models/all-MiniLM-L6-v2/` |
+| 模型大小 | 约 80MB |
+| 首次下载 | 自动完成 |
+| 离线使用 | 下载后可离线运行 |
 
 ---
 
-*Created: 2026-01-18*
+*Last Updated: 2026-02-06*
