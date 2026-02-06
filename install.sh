@@ -87,14 +87,66 @@ else
                 echo ""
                 echo "  需要安装 GitHub CLI..."
                 
-                # 检查是否有 Homebrew
-                if command -v brew &>/dev/null; then
-                    echo "  正在使用 Homebrew 安装 gh..."
-                    brew install gh
+                # 检测操作系统并安装
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    # macOS
+                    if command -v brew &>/dev/null; then
+                        echo "  正在使用 Homebrew 安装 gh..."
+                        brew install gh
+                    else
+                        echo -e "  ${RED}❌ 未检测到 Homebrew${NC}"
+                        echo "  请运行: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+                        echo "  然后运行: brew install gh"
+                        echo ""
+                        echo "  跳过授权配置..."
+                    fi
+                elif [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "linux-android"* ]]; then
+                    # Linux 或 Android Termux
+                    if command -v apt &>/dev/null; then
+                        echo "  正在使用 apt 安装 gh..."
+                        if command -v pkg &>/dev/null; then
+                            # Termux
+                            pkg install gh -y
+                        else
+                            # Debian/Ubuntu
+                            sudo apt install gh -y 2>/dev/null || {
+                                echo "  需要添加 GitHub CLI 源..."
+                                curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+                                echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+                                sudo apt update && sudo apt install gh -y
+                            }
+                        fi
+                    elif command -v dnf &>/dev/null; then
+                        # Fedora/RHEL
+                        echo "  正在使用 dnf 安装 gh..."
+                        sudo dnf install gh -y
+                    elif command -v pacman &>/dev/null; then
+                        # Arch Linux
+                        echo "  正在使用 pacman 安装 gh..."
+                        sudo pacman -S github-cli --noconfirm
+                    else
+                        echo -e "  ${RED}❌ 无法自动安装 gh${NC}"
+                        echo "  请手动安装: https://cli.github.com"
+                        echo ""
+                        echo "  跳过授权配置..."
+                    fi
+                elif [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then
+                    # Windows Git Bash / Cygwin
+                    if command -v winget &>/dev/null; then
+                        echo "  正在使用 winget 安装 gh..."
+                        winget install GitHub.cli
+                    elif command -v scoop &>/dev/null; then
+                        echo "  正在使用 scoop 安装 gh..."
+                        scoop install gh
+                    else
+                        echo -e "  ${RED}❌ 未检测到 winget 或 scoop${NC}"
+                        echo "  请手动安装: https://cli.github.com"
+                        echo ""
+                        echo "  跳过授权配置..."
+                    fi
                 else
-                    echo -e "  ${RED}❌ 未检测到 Homebrew${NC}"
-                    echo "  请先安装 Homebrew: https://brew.sh"
-                    echo "  或手动安装 GitHub CLI: https://cli.github.com"
+                    echo -e "  ${RED}❌ 不支持的操作系统: $OSTYPE${NC}"
+                    echo "  请手动安装 GitHub CLI: https://cli.github.com"
                     echo ""
                     echo "  跳过授权配置..."
                 fi
