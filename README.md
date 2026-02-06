@@ -100,6 +100,32 @@ We believe in the power of community! If you've built a cool skill (e.g., "Web S
 
 ---
 
+## 🔮 Roadmap
+
+### 5.1 Memory Hierarchy
+Moving beyond flat "long-term" storage to a structured lifecycle system:
+- **Conversation Memory**: Ephemeral, discarded after session exit.
+- **Session Memory**: Task-scoped, archived or discarded upon completion.
+- **User Memory**: Long-term, stores user preferences and habits.
+- **Skill Memory**: Permanent, reusable knowledge and capabilities.
+
+### 5.2 Dynamic Forgetting
+Simulating human memory to keep the system efficient:
+- **Relevance Decay**: Reduce retrieval weight for memories not accessed for a long time.
+- **Memory Pruning**: New `memory-prune` skill to clean up expired or low-value content.
+
+### 5.3 Enhanced Retrieval
+- **Graph Structures**: Track relationships between memories to build a knowledge graph.
+- **Time Awareness**: Prioritize recent memories during retrieval ("Recency Bias").
+- **Multi-modal Support**: Embedding support for images and code snippets.
+
+### 5.4 User Preferences
+Explicit user profiling system:
+- **Coding Style**: e.g., "Prefers TypeScript", "Concise comments".
+- **Work Habits**: e.g., "Active hours 9-12 PM", "Prefers Dark Mode".
+
+---
+
 ## 📜 License
 
 MIT License © 2024 [Lanstar128](https://github.com/lanstar128)

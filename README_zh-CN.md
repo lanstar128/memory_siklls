@@ -103,6 +103,32 @@ curl -sSL https://raw.githubusercontent.com/lanstar128/AI_memory_siklls/main/ins
 
 ---
 
+## 🔮 未来规划 (Roadmap)
+
+### 5.1 记忆分层 (Memory Hierarchy)
+目前所有记忆都是"长期"的。未来将引入更精细的生命周期管理：
+- **Conversation Memory**: 会话级，退出即丢弃
+- **Session Memory**: 任务级，完成后归档或丢弃
+- **User Memory**: 长期，存储用户偏好与习惯
+- **Skill Memory**: 永久，沉淀可复用的知识与技能
+
+### 5.2 动态遗忘机制 (Dynamic Forgetting)
+模拟大脑的遗忘机制，保持记忆库的高效：
+- **相关度衰减**: 长期未访问的记忆降低检索权重
+- **定期清理**: 提供 `memory-prune` 技能清理过期或低价值内容
+
+### 5.3 增强检索能力 (Enhanced Retrieval)
+- **图结构关联**: 记录记忆点之间的引用关系，构建知识图谱
+- **时间感知**: 检索时融合"最近优先"策略
+- **多模态支持**: 支持图片、代码片段的 Embedding 索引
+
+### 5.4 用户偏好记忆 (User Preferences)
+建立显式的用户画像系统：
+- **编码风格**: 如 "偏好 TypeScript", "注释简洁"
+- **工作习惯**: 如 "工作时间 9-12 点", "喜欢深色模式"
+
+---
+
 ## 📜 许可证
 
 MIT License © 2024 [Lanstar128](https://github.com/lanstar128)
