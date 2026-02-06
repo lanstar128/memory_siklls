@@ -11,28 +11,35 @@
 
 </div>
 
-**AI Memory System (AMS)** 是一个开源的 AI 记忆管理框架。它通过标准化的文件结构和 Git 自动同步机制，让不同的 AI 工具共享同一份记忆（对话归档、知识库、偏好设置），并支持在 macOS, Windows, Linux, Android (Termux) 等多设备间无缝流转。
+**AI Memory System (AMS)** 是一个专为 **Antigravity, Claude Code, Gemini CLI, Open Interpreter, iFlow** 等终端 AI 工具打造的 **全局记忆层**。
+
+### 🚨 痛点：AI 记忆的碎片化孤岛
+但在当下，我们在使用各种本地开发工具（Terminal / IDE）与 AI 结对编程时，面临一个巨大的痛点：
+- **记忆割裂**：你在 MacBook 上教给 AI 的项目知识，切到 Windows 或 Android Termux 上全忘了。
+- **经验流失**：你解决过一次的复杂报错，换个环境又得重头排查一遍，无法沉淀经验。
+- **上下文丢失**：AI 不知道你的编码偏好，不知道你上周在另一台设备上讨论的架构设计。
+
+**AMS 就是为了完美解决这个问题而生。** 它让你的所有 AI 工具共享同一个"大脑"，确保你的知识、经验和上下文在所有设备间实时同步。
 
 ---
 
-## 🌟 核心特性
+## 🌟 核心价值
 
-- **🔒 隐私优先 (Privacy First)**
-  - **Code (Public) + Data (Private)**：采用创新双仓库架构。
-  - **零泄露风险**：你的记忆数据（`conversations`, `knowledge`, `secrets`）只存储在你私有的 GitHub 仓库中，绝不公开。技能代码则开源共享。
+- **🧠 全局记忆 (Global Memory)**
+  - **打破设备壁垒**：无论你在 Mac 终端、Windows Git Bash 还是安卓手机 Termux 上开发，AI 都能读取到同一份沉淀下来的知识。
+  - **一次解决，处处复用**：当 AI 帮你解决了一个棘手 Bug，这段经验会被归档。下次在任何设备遇到相同问题，AI 能立即调取之前的解决方案。
 
-- **⚡️ 智能聚合 (Smart Aggregation)**
-  - **自动合并**：系统会自动将官方验证的优质技能和你独有的私有技能合并到一起。
-  - **优先级覆盖**：官方核心技能更新会自动覆盖旧版本，确保系统稳定；同时完美保留你定制的私有工具。
+- **💎 经验晶体 (Experience Crystallization)**
+  - **知识沉淀**：不只是简单的保存对话，而是将零散的对话转化为结构化的**知识晶体**（Markdwon/代码片段）。
+  - **伴随式成长**：你的 AI 助手会随着你的使用越来越懂你，越来越懂你的项目，而不是每次重置为空白。
 
-- **🚀 跨平台 & 跨工具 (Cross-Platform)**
-  - **全平台支持**：完美适配 macOS, Windows (Git Bash), Linux, 和 Android (Termux)。
-  - **原生集成**：支持 **Gemini CLI**, **Claude Code**, **Antigravity**, **iFlow**, **Codex** 等主流工具。
-  - **IDE 配置**：提供 VS Code / Cursor / JetBrains 的配置指南。
+- **🛡️ 隐私安全可控 (Privacy Control)**
+  - **Code (Public) + Data (Private)**：所有记忆数据存储在你私有的 GitHub 仓库。
+  - **数据主权**：你完全掌控自己的数据，不依赖任何厂商的云端存储，安全、透明、可控。
 
-- **🔄 无感同步 (Seamless Sync)**
-  - **一句指令**：只需说 "同步记忆"，系统自动完成 `pull -> commit -> push` 全流程。
-  - **冲突处理**：内置多设备同步逻辑，自动记录变更来源，让你在手机和电脑间无缝切换。
+- **⚡️ 跨端无缝接力 (Seamless Relay)**
+  - **工作流接力**：在公司电脑上没写完的代码逻辑，同步记忆后，回家路上用手机 Termux 继续无缝对话。
+  - **智能聚合**：自动聚合官方最新技能和你独有的私有配置，既享受社区更新，又保留个性化定制。
 
 ---
 

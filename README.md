@@ -11,28 +11,35 @@
 
 </div>
 
-**AI Memory System (AMS)** is an open-source framework designed to give your AI assistants (Gemini, Claude, ChatGPT, etc.) a unified, long-term memory. It bridges the gap between different AI tools, allowing them to share context, knowledge, and preferences across all your devices securely.
+**AI Memory System (AMS)** is a **Global Memory Layer** designed specifically for terminal AI tools like **Antigravity, Claude Code, Gemini CLI, Open Interpreter, and iFlow**.
+
+### 🚨 The Pain: Fragmented AI Memory
+When using local AI development tools across different environments (Terminal / IDE), developers face a critical problem:
+- **Memory Silos**: What you teach your AI on your MacBook is lost when you switch to Windows or Android Termux.
+- **Experience Drain**: You solve a complex error once, but have to debug it from scratch in a new environment because the "memory" is trapped locally.
+- **Context Loss**: Your AI doesn't know your coding style or architectural decisions discussed on another device last week.
+
+**AMS is built to solve this.** It gives all your AI tools a shared "Brain", ensuring that your knowledge, experience, and context are synchronized instantly across all your devices.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Core Value
 
-- **🔒 Privacy First Architecture**
-  - **Your Data Stays Yours**: Adopts a unique "Code (Public) + Data (Private)" dual-repository strategy.
-  - **Zero Leakage**: All conversations, knowledge, and secrets are stored in your own **Private GitHub Repository**. Only the skill logic is shared.
+- **🧠 Global Memory**
+  - **Break Device Silos**: Whether you develop on Mac Terminal, Windows Git Bash, or Android Termux, your AI accesses the same accumulated knowledge base.
+  - **Solve Once, Reuse Everywhere**: When AI helps you fix a tricky bug, that experience is crystallized. The next time you encounter it on *any* device, AI recalls the solution instantly.
 
-- **⚡️ Smart Aggregation**
-  - **Best of Both Worlds**: Automatically merges official, community-verified skills with your own private, custom skills locally.
-  - **Priority Override**: Ensures core system stability by prioritizing official updates (`memory-sync`) while preserving your unique private tools (`my-custom-scraper`).
+- **💎 Experience Crystallization**
+  - **Knowledge Distillation**: Turns scattered chat logs into structured **Knowledge Crystals** (Markdown/Snippets), not just raw history.
+  - **Continuous Growth**: Your AI assistant grows with you, understanding your project context better every day, instead of resetting to a blank slate.
 
-- **🚀 Cross-Platform & Cross-Tool**
-  - **Any OS**: Seamless experience on macOS, Windows, Linux, and Android (via Termux).
-  - **Any Tool**: Native support for **Gemini CLI**, **Claude Code**, **Antigravity**, **iFlow**, and **Codex**.
-  - **IDE Ready**: Includes configuration guides for VS Code, Cursor, and JetBrains.
+- **🛡️ Private & Secure Control**
+  - **Code (Public) + Data (Private)**: All memory data lives in your own private GitHub repository.
+  - **Data Sovereignty**: You have full control. No proprietary cloud lock-in. Secure, transparent, and yours.
 
-- **🔄 Seamless Synchronization**
-  - **One Command**: Just say "Sync Memory" to `pull -> commit -> push`.
-  - **Conflict Free**: Automatically handles multi-device synchronization logic, keeping your brain in sync whether you're on your phone or desktop.
+- **⚡️ Seamless Cross-Device Relay**
+  - **Workflow Handoff**: Start a logic design on your office workstation, "Sync Memory", and continue the conversation seamlessly on your phone via Termux on the way home.
+  - **Smart Aggregation**: Automatically merges official skill updates with your unique private configurations.
 
 ---
 
