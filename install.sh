@@ -57,39 +57,79 @@ else
     echo ""
     echo "  请输入你的私人记忆仓库地址"
     echo "  （如果没有，请先在 GitHub/Gitee 创建一个空的私有仓库）"
+    echo "  （确保已配置好 SSH 密钥或 HTTPS 凭据）"
     echo ""
-    # 从 fd 3 读取用户输入（支持 curl | bash 模式）
-    printf "  仓库地址 (直接回车跳过): "
-    read data_repo <&3
-
-    if [ -n "$data_repo" ]; then
-        mkdir -p "$MEMORY_ROOT/data"
-        if git clone --quiet "$data_repo" "$MEMORY_ROOT/data" 2>/dev/null; then
-            echo -e "  ${GREEN}✓${NC} 私人数据仓库已克隆"
-        else
-            # 仓库是空的，需要初始化
-            cd "$MEMORY_ROOT/data"
-            git init --quiet
-            git remote add origin "$data_repo"
+    
+    data_repo=""
+    while true; do
+        # 从 fd 3 读取用户输入（支持 curl | bash 模式）
+        printf "  仓库地址 (直接回车跳过): "
+        read data_repo <&3
+        
+        # 如果用户直接回车，跳过
+        if [ -z "$data_repo" ]; then
+            echo "  跳过私人仓库配置"
+            mkdir -p "$MEMORY_ROOT/data/conversations" "$MEMORY_ROOT/data/knowledge"
+            echo -e "  ${YELLOW}⚠️${NC} 已创建本地目录，稍后可手动关联仓库"
+            break
+        fi
+        
+        # 验证仓库地址格式
+        if [[ ! "$data_repo" =~ ^(git@|https://) ]]; then
+            echo -e "  ${RED}❌ 无效的仓库地址格式${NC}"
+            echo "  请使用 SSH 格式 (git@github.com:user/repo.git)"
+            echo "  或 HTTPS 格式 (https://github.com/user/repo.git)"
+            echo ""
+            continue
+        fi
+        
+        # 验证仓库是否可访问
+        echo "  正在验证仓库..."
+        if git ls-remote "$data_repo" &>/dev/null; then
+            echo -e "  ${GREEN}✓${NC} 仓库验证通过"
             
-            # 创建初始目录结构
-            mkdir -p conversations knowledge
-            cat > .gitignore << 'EOF'
+            # 克隆仓库
+            mkdir -p "$MEMORY_ROOT/data"
+            if git clone --quiet "$data_repo" "$MEMORY_ROOT/data" 2>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} 私人数据仓库已克隆"
+            else
+                # 仓库是空的，需要初始化
+                cd "$MEMORY_ROOT/data"
+                git init --quiet
+                git remote add origin "$data_repo"
+                
+                # 创建初始目录结构
+                mkdir -p conversations knowledge
+                cat > .gitignore << 'EOF'
 .DS_Store
 *.log
 __pycache__/
 EOF
-            git add .
-            git commit -m "Initial: AI memory data" --quiet
-            git branch -M main
-            echo -e "  ${GREEN}✓${NC} 私人数据仓库已初始化"
-            echo -e "  ${YELLOW}⚠️${NC} 请稍后手动执行 git push 推送到远程"
+                git add .
+                git commit -m "Initial: AI memory data" --quiet
+                git branch -M main
+                echo -e "  ${GREEN}✓${NC} 私人数据仓库已初始化"
+                echo -e "  ${YELLOW}⚠️${NC} 请稍后手动执行 git push 推送到远程"
+            fi
+            break
+        else
+            echo -e "  ${RED}❌ 无法访问仓库${NC}"
+            echo "  可能原因："
+            echo "    1. 仓库地址错误"
+            echo "    2. 仓库不存在"
+            echo "    3. 没有访问权限（SSH 密钥未配置）"
+            echo ""
+            printf "  是否重试？[y/n]: "
+            read retry <&3
+            if [[ "$retry" != "y" && "$retry" != "Y" ]]; then
+                echo "  跳过私人仓库配置"
+                mkdir -p "$MEMORY_ROOT/data/conversations" "$MEMORY_ROOT/data/knowledge"
+                echo -e "  ${YELLOW}⚠️${NC} 已创建本地目录，稍后可手动关联仓库"
+                break
+            fi
+            echo ""
         fi
-    else
-        echo "  跳过私人仓库配置"
-        mkdir -p "$MEMORY_ROOT/data/conversations" "$MEMORY_ROOT/data/knowledge"
-        echo -e "  ${YELLOW}⚠️${NC} 已创建本地目录，稍后可手动关联仓库"
-    fi
+    done
 fi
 
 # ==================== 创建符号链接 ====================
