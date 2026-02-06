@@ -1,103 +1,105 @@
 # 🧠 AI Memory System (AMS)
 
-> **为你的 AI 助手（Gemini, Claude, ChatGPT 等）构建一个持久的、跨平台的、隐私优先的"第二大脑"。**
+<div align="center">
+
+**Build a persistent, cross-platform, privacy-first "Second Brain" for your AI assistants.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-**AI Memory System (AMS)** 是一个开源的 AI 记忆管理框架。它通过标准化的文件结构和 Git 自动同步机制，让不同的 AI 工具共享同一份记忆（对话归档、知识库、偏好设置），并支持在 macOS, Windows, Linux, Android (Termux) 等多设备间无缝流转。
+[English](./README.md) | [简体中文](./README_zh-CN.md)
+
+</div>
+
+**AI Memory System (AMS)** is an open-source framework designed to give your AI assistants (Gemini, Claude, ChatGPT, etc.) a unified, long-term memory. It bridges the gap between different AI tools, allowing them to share context, knowledge, and preferences across all your devices securely.
 
 ---
 
-## 🌟 核心特性
+## 🌟 Key Features
 
-- **🔒 隐私优先 (Privacy First)**
-  - 采用 **"Code (Public) + Data (Private)" 双仓库架构**。
-  - 你的记忆数据（`conversations`, `knowledge`, `secrets`）只存储在你私有的 GitHub 仓库中，绝不公开。
-  - 技能代码开源，共享社区智慧。
+- **🔒 Privacy First Architecture**
+  - **Your Data Stays Yours**: Adopts a unique "Code (Public) + Data (Private)" dual-repository strategy.
+  - **Zero Leakage**: All conversations, knowledge, and secrets are stored in your own **Private GitHub Repository**. Only the skill logic is shared.
 
-- **⚡️ 智能聚合 (Smart Aggregation)**
-  - **Auto-Merge**: 自动聚合官方技能和你独有的私有技能。
-  - **Priority Override**: 官方核心技能更新自动覆盖旧版，确保系统稳定，但也允许你保留独家定制的 Private Skills。
+- **⚡️ Smart Aggregation**
+  - **Best of Both Worlds**: Automatically merges official, community-verified skills with your own private, custom skills locally.
+  - **Priority Override**: Ensures core system stability by prioritizing official updates (`memory-sync`) while preserving your unique private tools (`my-custom-scraper`).
 
-- **🚀 跨平台 & 跨工具 (Cross-Platform)**
-  - **OS**: macOS, Linux, Windows, Android (Termux)。
-  - **AI Tools**: 原生支持 Gemini CLI, Claude Code, Antigravity IDE, iFlow, Codex 等。
-  - **IDE**: 提供 VS Code / Cursor / JetBrains 配置指南。
+- **🚀 Cross-Platform & Cross-Tool**
+  - **Any OS**: Seamless experience on macOS, Windows, Linux, and Android (via Termux).
+  - **Any Tool**: Native support for **Gemini CLI**, **Claude Code**, **Antigravity**, **iFlow**, and **Codex**.
+  - **IDE Ready**: Includes configuration guides for VS Code, Cursor, and JetBrains.
 
-- **🔄 无感同步 (Seamless Sync)**
-  - 一个命令 `同步记忆` 即可完成 `pull -> commit -> push` 全流程。
-  - 自动处理多设备冲突，记录变更设备来源。
+- **🔄 Seamless Synchronization**
+  - **One Command**: Just say "Sync Memory" to `pull -> commit -> push`.
+  - **Conflict Free**: Automatically handles multi-device synchronization logic, keeping your brain in sync whether you're on your phone or desktop.
 
 ---
 
-## 📦 快速开始
+## 📦 Quick Start
 
-### 1. 准备工作
-在 GitHub 上创建一个 **私有仓库 (Private Repository)**，命名为 `my-ai-memory` (或者其他你喜欢的名字)。
-> 这个仓库将用来存放你的私人数据。
+### 1. Preparation
+Create a **Private Repository** on GitHub named `my-ai-memory` (or any name you prefer).
+> This repository will be the secure vault for your personal data.
 
-### 2. 一键安装
-在终端运行以下命令（支持 mac/linux/termux/win-git-bash）：
+### 2. One-Line Installation
+Paste this into your terminal (Mac / Linux / Windows Git Bash / Termux):
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/lanstar128/AI_memory_siklls/main/install.sh | bash
 ```
 
-**安装脚本会自动执行：**
-1. 检测系统环境 (OS, Git, SSH)。
-2. 拉取官方技能库 (`~/.ai-memory/skills`)。
-3. 引导你克隆私人数据仓库到 `~/.ai-memory/data`。
-4. 自动配置 Git 授权 (支持 SSH 密钥或 GitHub CLI 网页登录)。
-5. 创建智能聚合目录 `~/.ai-memory/current_skills`。
-6. 为已安装的 AI 工具创建符号链接。
+**What the script does:**
+1. Checks your environment dependencies (Git, SSH, Hub CLI).
+2. Clones the official skills to `~/.ai-memory/skills`.
+3. Guides you to clone your private data repo to `~/.ai-memory/data`.
+4. Sets up the **Smart Aggregation** directory at `~/.ai-memory/current_skills`.
+5. Links everything to your installed AI tools automatically.
 
 ---
 
-## 🛠 使用指南
+## 🛠 Usage Guide
 
-安装完成后，你可以直接在 AI 工具（如 Gemini）中使用自然语言触发技能：
+Once installed, simply talk to your AI assistant naturally:
 
-### 基础指令
+### Essential Commands
 
-| 你说... | 触发技能 | 说明 |
-|---------|---------|------|
-| **"同步记忆"** | `memory-sync` | 将本地变更推送到你的私有仓库 |
-| **"拉取记忆"** | `memory-sync` | 从远程拉取最新的记忆数据 |
-| **"更新技能"** | `memory-sync` | 获取本仓库的最新代码更新 |
-| **"保存对话"** | `conversation-archive` | 将当前上下文归档保存 |
-| **"检索记忆 [关键词]"** | `memory-recall` | 搜索所有归档和知识库 |
+| Command | Skill | Description |
+|---------|-------|-------------|
+| **"Sync Memory"** | `memory-sync` | Push local changes to your private cloud |
+| **"Pull Memory"** | `memory-sync` | Get latest updates from other devices |
+| **"Update Skills"** | `memory-sync` | Upgrade system code from official repo |
+| **"Archive Chat"** | `conversation-archive` | Save current context to long-term memory |
+| **"Recall [topic]"** | `memory-recall` | Search through your entire knowledge base |
 
-### 目录结构
+### Directory Structure
 
-系统会在你的主目录下创建 `~/.ai-memory`：
+Your second brain lives in `~/.ai-memory`:
 
 ```text
 ~/.ai-memory/
-├── 📂 skills/          # [Public] 官方技能代码 (本仓库)
-├── 📂 data/            # [Private] 你的私人数据仓库
-│   ├── 📂 conversations/ # 对话历史归档
-│   ├── 📂 knowledge/     # 沉淀的结构化知识
-│   └── 📂 skills/        # (可选) 你独有的私有技能
-├── 📂 current_skills/  # [Auto] 运行时聚合目录 (Public + Private)
-└── 📂 models/          # 本地 Embedding 模型缓存
+├── 📂 skills/          # [Public] Official skill logic (This Repo)
+├── 📂 data/            # [Private] Your Secure Data Vault
+│   ├── 📂 conversations/ # Chat history archives
+│   ├── 📂 knowledge/     # Distilled knowledge base
+│   └── 📂 skills/        # (Optional) Your private, custom skills
+├── 📂 current_skills/  # [Auto] The "Active Brain" (Public + Private)
+└── 📂 models/          # Local Embedding models cache
 ```
 
 ---
 
-## 🤝 参与贡献
+## 🤝 Contributing
 
-我们非常欢迎社区贡献！如果你有通用的 AI 技能（如"抓取网页"、"生成图表"、"管理待办"等），请贡献到 `skills/` 目录。
+We believe in the power of community! If you've built a cool skill (e.g., "Web Scraper", "Todo Manager"), please share it!
 
-1. Fork 本仓库
-2. 创建你的技能目录 `skills/your-skill-name`
-3. 编写 `SKILLS.md` 和代码
-4. 提交 Pull Request
-
-让我们的 AI 变得更强大！
+1. Fork this repository
+2. Create your skill in `skills/your-skill-name`
+3. Write a `SKILL.md`
+4. Submit a Pull Request
 
 ---
 
-## 📜 许可证
+## 📜 License
 
 MIT License © 2024 [Lanstar128](https://github.com/lanstar128)
