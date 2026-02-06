@@ -96,14 +96,19 @@ create_link() {
     local name=$3
     
     if [ -d "$tool_dir" ]; then
-        # 如果目标已存在且不是符号链接，备份它
-        if [ -d "$target" ] && [ ! -L "$target" ]; then
-            mv "$target" "${target}.bak.$(date +%s)"
-        fi
         # 确保父目录存在
         mkdir -p "$(dirname "$target")"
+        
+        # 如果目标是符号链接，先删除
+        if [ -L "$target" ]; then
+            rm "$target"
+        # 如果目标是普通目录，备份它
+        elif [ -d "$target" ]; then
+            mv "$target" "${target}.bak.$(date +%s)"
+        fi
+        
         # 创建符号链接
-        ln -sf "$MEMORY_ROOT/skills/skills" "$target"
+        ln -s "$MEMORY_ROOT/skills/skills" "$target"
         echo -e "  ${GREEN}✓${NC} $name"
     fi
 }
