@@ -45,21 +45,28 @@ When using local AI development tools across different environments (Terminal / 
 
 ## 🔧 How It Works
 
-It's not magic; it's a smart composition of existing technologies. We leverage the **Skill/Tool Use** capabilities inherent in modern AI:
+It's not magic; it's a smart composition of existing technologies. We leverage the **Agent Skills Standard (File-based Definitions)** natively supported by modern terminal AI tools:
 
 ```mermaid
 graph LR
-    A[Gemini/Claude] -->|Call Skill| B[Local Scripts (Bash/Python)]
-    B -->|Read/Write| C[Local File System (~/.ai-memory)]
-    C -->|Git Push| D[Private GitHub Repo]
-    D -->|Git Pull| E[Other Devices]
+    A[Gemini/Claude] -->|Load| B[SKILL.md (Standard Definition)]
+    B -->|Execute| C[Local Scripts (Bash/Python)]
+    C -->|Read/Write| D[Local File System (~/.ai-memory)]
+    D -->|Git Push| E[Private GitHub Repo]
+    E -->|Git Pull| F[Other Devices]
 ```
 
-1.  **Standardized Interface**: We encapsulate "memory access" into standard `SKILL.md` definitions that any MCP-compliant AI (Model Context Protocol) can understand.
-2.  **Git as Backend**: We use Git's robust version control as a "distributed database," naturally handling sync, conflicts, and history.
-3.  **Local-First**: All memory operations are essentially file I/O on your local machine—fast, private, and independent of 3rd-party APIs.
+1.  **Universal Skill Standard (`SKILL.md`)**:
+    We use the `SKILL.md` format (YAML Frontmatter + Markdown) natively supported by Google Antigravity and Anthropic Claude Code.
+    *This is NOT the complex MCP protocol*, but a lighter, more universal **file-level context injection**. Simply by placing these files in specific directories (e.g., `~/.gemini/skills`), the AI automatically gains "memory capabilities".
 
-**Simply put**: We didn't just teach AI to code; we taught it to use Git to manage its own "notebook."
+2.  **Git as Backend**:
+    We use Git's robust version control as a "distributed database," naturally handling sync, conflicts, and history.
+
+3.  **Local-First**:
+    All memory operations are essentially file I/O on your local machine—fast, private, and independent of 3rd-party APIs.
+
+**Simply put**: We used the most universal standard (`SKILL.md`) to teach AI how to use the most mature tool (Git) to manage its own "notebook."
 
 ---
 

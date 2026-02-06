@@ -45,21 +45,28 @@
 
 ## 🔧 实现原理 (Under the Hood)
 
-这并不是魔法，而是对现有技术栈的巧妙组合。我们利用了现代 AI 工具普遍支持的 **Skill/Tool Use (函数调用)** 能力：
+这并不是魔法，而是对现有技术栈的巧妙组合。我们利用了当前主流终端 AI 工具（Antigravity, Claude Code 等）普遍支持的 **Agent Skills (基于文件的技能定义)** 标准：
 
 ```mermaid
 graph LR
-    A[Gemini/Claude] -->|调用 Skill| B[本地脚本 (Bash/Python)]
-    B -->|读写| C[本地文件系统 (~/.ai-memory)]
-    C -->|Git Push| D[私有 GitHub 仓库]
-    D -->|Git Pull| E[其他设备]
+    A[Gemini/Claude] -->|加载| B[SKILL.md (标准技能定义)]
+    B -->|执行| C[本地脚本 (Bash/Python)]
+    C -->|读写| D[本地文件系统 (~/.ai-memory)]
+    D -->|Git Push| E[私有 GitHub 仓库]
+    E -->|Git Pull| F[其他设备]
 ```
 
-1.  **标准化接口**：我们将"记忆存取"封装为标准的 `SKILL.md` 定义，让任何支持 MCP (Model Context Protocol) 或类似规范的 AI 都能理解。
-2.  **Git 为后端**：利用 Git 强大的版本控制能力作为"分布式数据库"，天然解决了多端同步、冲突合并和历史回溯问题。
-3.  **本地为中心**：所有的记忆操作本质上都是对本地文件的读写，速度极快且不依赖第三方 API 服务。
+1.  **通用技能标准 (`SKILL.md`)**：
+    我们使用 Google Antigravity 和 Anthropic Claude Code 原生支持的 `SKILL.md` 格式（YAML Frontmatter + Markdown）来定义记忆操作。
+    *这不是复杂的 MCP 协议*，而是更轻量、更通用的**文件级上下文注入**。只要将这些文件放在指定目录（如 `~/.gemini/skills`），AI 就能自动获得"记忆能力"。
 
-**简单来说**：我们不仅教会了 AI 编程，还教会了它使用 Git 来管理自己的"笔记本"。
+2.  **Git 为后端**：
+    利用 Git 强大的版本控制能力作为"分布式数据库"，天然解决了多端同步、冲突合并和历史回溯问题。
+
+3.  **本地优先 (Local-First)**：
+    所有的记忆操作本质上都是对本地文件的读写，速度极快且不依赖第三方 API 服务。
+
+**简单来说**：我们用最通用的标准（SKILL.md）教会了 AI 使用最成熟的工具（Git）来管理自己的"笔记本"。
 
 ---
 
