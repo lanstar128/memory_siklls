@@ -60,6 +60,10 @@ git -C $DATA_DIR push
 ```bash
 DATA_DIR=~/.ai-memory/data
 git -C $DATA_DIR pull
+
+# 刷新技能聚合
+REFRESH_SCRIPT=~/.ai-memory/skills/scripts/refresh_skills.sh
+[ -f "$REFRESH_SCRIPT" ] && bash "$REFRESH_SCRIPT"
 ```
 
 ### 3.3 更新技能
@@ -67,6 +71,10 @@ git -C $DATA_DIR pull
 ```bash
 SKILLS_DIR=~/.ai-memory/skills
 git -C $SKILLS_DIR pull
+
+# 刷新技能聚合
+REFRESH_SCRIPT=~/.ai-memory/skills/scripts/refresh_skills.sh
+[ -f "$REFRESH_SCRIPT" ] && bash "$REFRESH_SCRIPT"
 ```
 
 ---

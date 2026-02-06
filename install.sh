@@ -176,6 +176,8 @@ create_link() {
     local tool_dir=$1
     local target=$2
     local name=$3
+    # 允许传入自定义源路径（第四个参数），默认为聚合目录
+    local source=${4:-"$MEMORY_ROOT/skills/skills"}
     
     if [ ! -d "$tool_dir" ]; then
         return
@@ -194,21 +196,21 @@ create_link() {
     # 根据系统创建链接
     case "$OS_TYPE" in
         windows)
-            local win_source=$(cygpath -w "$MEMORY_ROOT/skills/skills" 2>/dev/null || echo "$MEMORY_ROOT/skills/skills")
+            local win_source=$(cygpath -w "$source" 2>/dev/null || echo "$source")
             local win_target=$(cygpath -w "$target" 2>/dev/null || echo "$target")
             
             if cmd //c "mklink /D \"$win_target\" \"$win_source\"" &>/dev/null; then
                 echo -e "  ${GREEN}✓${NC} $name"
             elif command -v junction &>/dev/null; then
-                junction "$target" "$MEMORY_ROOT/skills/skills"
+                junction "$target" "$source"
                 echo -e "  ${GREEN}✓${NC} $name"
             else
-                cp -r "$MEMORY_ROOT/skills/skills" "$target"
+                cp -r "$source" "$target"
                 echo -e "  ${YELLOW}✓${NC} $name (复制模式)"
             fi
             ;;
         *)
-            ln -s "$MEMORY_ROOT/skills/skills" "$target"
+            ln -s "$source" "$target"
             echo -e "  ${GREEN}✓${NC} $name"
             ;;
     esac
@@ -367,11 +369,25 @@ create_tool_links() {
     echo ""
     echo -e "${YELLOW}[3/4] 创建 AI 工具链接...${NC}"
     
-    [ -d "$HOME/.gemini" ] && create_link "$HOME/.gemini" "$HOME/.gemini/skills" "Gemini CLI"
-    [ -d "$HOME/.gemini/antigravity" ] && create_link "$HOME/.gemini/antigravity" "$HOME/.gemini/antigravity/skills" "Antigravity IDE"
-    [ -d "$HOME/.claude" ] && create_link "$HOME/.claude" "$HOME/.claude/skills" "Claude Code"
-    [ -d "$HOME/.codex" ] && create_link "$HOME/.codex" "$HOME/.codex/skills" "Codex CLI"
-    [ -d "$HOME/.iflow" ] && create_link "$HOME/.iflow" "$HOME/.iflow/skills" "iFlow CLI"
+    # 1. 执行技能聚合
+    # 确保刷新脚本可执行
+    if [ -f "$MEMORY_ROOT/skills/scripts/refresh_skills.sh" ]; then
+        chmod +x "$MEMORY_ROOT/skills/scripts/refresh_skills.sh"
+        bash "$MEMORY_ROOT/skills/scripts/refresh_skills.sh"
+    else
+        echo -e "  ${RED}❌ 未找到刷新脚本，跳过聚合${NC}"
+    fi
+
+    local SKILLS_TARGET="$MEMORY_ROOT/current_skills"
+    
+    # 2. 链接各工具到聚合目录
+    # (复用 create_link 工具函数，但源变为 current_skills)
+    
+    [ -d "$HOME/.gemini" ] && create_link "$HOME/.gemini" "$HOME/.gemini/skills" "Gemini CLI" "$SKILLS_TARGET"
+    [ -d "$HOME/.gemini/antigravity" ] && create_link "$HOME/.gemini/antigravity" "$HOME/.gemini/antigravity/skills" "Antigravity IDE" "$SKILLS_TARGET"
+    [ -d "$HOME/.claude" ] && create_link "$HOME/.claude" "$HOME/.claude/skills" "Claude Code" "$SKILLS_TARGET"
+    [ -d "$HOME/.codex" ] && create_link "$HOME/.codex" "$HOME/.codex/skills" "Codex CLI" "$SKILLS_TARGET"
+    [ -d "$HOME/.iflow" ] && create_link "$HOME/.iflow" "$HOME/.iflow/skills" "iFlow CLI" "$SKILLS_TARGET"
 }
 
 # ==================== 第六步：初始化配置 ====================
