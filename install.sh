@@ -14,6 +14,10 @@ NC='\033[0m'
 MEMORY_ROOT="$HOME/.ai-memory"
 SKILLS_REPO="https://github.com/lanstar128/AI_memory_siklls.git"
 
+# 为 curl | bash 模式准备 TTY 输入
+# 打开 fd 3 连接到终端，用于读取用户输入
+exec 3</dev/tty 2>/dev/null || exec 3<&0
+
 echo ""
 echo -e "${BLUE}🧠 AI Memory System 安装器${NC}"
 echo "=============================="
@@ -54,8 +58,9 @@ else
     echo "  请输入你的私人记忆仓库地址"
     echo "  （如果没有，请先在 GitHub/Gitee 创建一个空的私有仓库）"
     echo ""
-    # 从 /dev/tty 读取以支持 curl | bash 模式
-    read -p "  仓库地址 (直接回车跳过): " data_repo < /dev/tty
+    # 从 fd 3 读取用户输入（支持 curl | bash 模式）
+    printf "  仓库地址 (直接回车跳过): "
+    read data_repo <&3
 
     if [ -n "$data_repo" ]; then
         mkdir -p "$MEMORY_ROOT/data"
