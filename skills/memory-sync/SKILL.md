@@ -85,7 +85,8 @@ REFRESH_SCRIPT=~/.ai-memory/skills/scripts/refresh_skills.sh
 |----------|------|------|
 | `data/conversations/` | 对话归档 | ✅ |
 | `data/knowledge/` | 沉淀的知识 | ✅ |
-| `data/secrets.env` | 敏感配置 | ✅ |
+| `data/profiles/` | 用户偏好 / 项目交接记忆 | ✅ |
+| `data/secrets.env` | 敏感配置 | ❌（默认应加入 `.gitignore`） |
 | `skills/` | 技能代码 | ⬅️ 只读拉取 |
 
 ---

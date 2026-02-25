@@ -4,7 +4,7 @@
 
 set -e
 
-MEMORY_ROOT="$HOME/.ai-memory"
+MEMORY_ROOT="${AMS_MEMORY_ROOT:-$HOME/.ai-memory}"
 SKILLS_PUBLIC="$MEMORY_ROOT/skills/skills"
 SKILLS_PRIVATE="$MEMORY_ROOT/data/skills"
 AGGREGATE_DIR="$MEMORY_ROOT/current_skills"

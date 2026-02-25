@@ -12,16 +12,17 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
-def get_memory_root() -> Path:
-    """Detect memory root based on installed platform directories."""
-    home = Path.home()
-    codex_root = home / '.codex'
-    if codex_root.exists():
-        return codex_root / 'memory'
-    gemini_root = home / '.gemini'
-    if gemini_root.exists():
-        return gemini_root / 'memory'
-    return codex_root / 'memory'
+def get_data_dir() -> Path:
+    """Resolve the AMS data dir, defaulting to ~/.ai-memory/data."""
+    data_dir = os.environ.get('AI_MEMORY_DATA_DIR') or os.environ.get('AMS_DATA_DIR')
+    if data_dir:
+        return Path(data_dir).expanduser()
+
+    memory_root = os.environ.get('AI_MEMORY_ROOT') or os.environ.get('AMS_MEMORY_ROOT')
+    if memory_root:
+        return Path(memory_root).expanduser() / 'data'
+
+    return Path.home() / '.ai-memory' / 'data'
 
 
 def parse_timestamp(raw_ts: Optional[str]) -> Optional[datetime]:
@@ -175,7 +176,8 @@ def main() -> None:
     parser.add_argument('--session', help='Path to a Codex session JSONL file')
     parser.add_argument('--latest', action='store_true', help='Use the latest session')
     parser.add_argument('--title', help='Conversation title override')
-    parser.add_argument('--out-dir', help='Output directory (defaults to memory root)')
+    parser.add_argument('--out-dir', help='Legacy memory root (stores files under <out-dir>/conversations)')
+    parser.add_argument('--data-dir', help='AMS data directory (defaults to ~/.ai-memory/data)')
     parser.add_argument('--metadata-out', help='Metadata JSON output path')
     args = parser.parse_args()
 
@@ -203,8 +205,14 @@ def main() -> None:
 
     title = args.title or f'Codex Session {session_id}'
 
-    memory_root = Path(args.out_dir).expanduser() if args.out_dir else get_memory_root()
-    output_dir = memory_root / 'conversations' / month_dir
+    if args.data_dir:
+        data_dir = Path(args.data_dir).expanduser()
+    elif args.out_dir:
+        data_dir = Path(args.out_dir).expanduser()
+    else:
+        data_dir = get_data_dir()
+
+    output_dir = data_dir / 'conversations' / month_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
     output_filename = f'{date_prefix}_{sanitize_filename(title)}.md'

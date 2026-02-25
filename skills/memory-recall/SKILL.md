@@ -13,6 +13,8 @@ metadata:
 
 统一检索历史对话和沉淀的知识。
 
+> 默认使用 `~/.ai-memory/data`。如你的数据目录不在默认位置，请显式传 `--data-dir`。
+
 ## 一、路径配置
 
 | 变量 | 路径 |
@@ -44,6 +46,15 @@ python3 ~/.ai-memory/skills/skills/memory-recall/scripts/search.py \
   --query "对话归档怎么实现的" \
   --data-dir ~/.ai-memory/data \
   --top 5
+```
+
+如果当前机器未安装语义检索依赖，可先用关键词模式（不阻塞使用）：
+
+```bash
+python3 ~/.ai-memory/skills/skills/memory-recall/scripts/search.py \
+  --query "上次怎么解决 git 冲突" \
+  --data-dir ~/.ai-memory/data \
+  --keyword-only
 ```
 
 ### 3.2 输出格式
@@ -84,6 +95,15 @@ python3 ~/.ai-memory/skills/skills/memory-recall/scripts/search.py \
 | 模型大小 | 约 80MB |
 | 首次下载 | 自动完成 |
 | 离线使用 | 下载后可离线运行 |
+
+## 六、常用参数
+
+| 参数 | 作用 |
+|------|------|
+| `--data-dir` | 指定私人记忆数据目录 |
+| `--skills-dir` | 指定技能目录（默认 `~/.ai-memory/skills/skills`） |
+| `--project` | 按项目路径过滤对话记录 |
+| `--keyword-only` | 禁用语义重排，快速关键词检索 |
 
 ---
 

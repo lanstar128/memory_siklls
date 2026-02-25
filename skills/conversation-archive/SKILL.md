@@ -67,6 +67,25 @@ project: <项目路径>
 EOF
 ```
 
+### 3.3 Codex（推荐自动归档方式）
+
+对于 Codex / Codex desktop，优先使用配套脚本自动导出并建立索引：
+
+```bash
+DATA_DIR=~/.ai-memory/data
+SKILL_DIR=~/.ai-memory/skills/skills/conversation-archive/scripts
+
+# 导出最近一次 Codex 会话
+python3 "$SKILL_DIR/codex_export.py" --latest --data-dir "$DATA_DIR" --title "本次任务主题"
+
+# 将导出的 JSON 元数据写入 SQLite 索引（便于 recall 检索）
+LATEST_JSON=$(ls -t "$DATA_DIR"/conversations/*/*.json | head -1)
+LATEST_MD="${LATEST_JSON%.json}.md"
+python3 "$SKILL_DIR/db_manager.py" --action add --data-dir "$DATA_DIR" --metadata "$LATEST_JSON" --file "$LATEST_MD"
+```
+
+> 如果想导出指定会话：`codex_export.py --session ~/.codex/sessions/...jsonl --data-dir ~/.ai-memory/data`
+
 ---
 
 ## 四、确认完成
@@ -84,6 +103,7 @@ EOF
 
 | 脚本 | 功能 |
 |------|------|
+| `scripts/codex_export.py` | 导出 Codex 会话为 Markdown + 元数据 |
 | `scripts/inject_timestamps.py` | 时间戳注入 |
 | `scripts/db_manager.py` | 索引管理 |
 | `scripts/dedup_archives.py` | 去重检查 |

@@ -23,29 +23,34 @@ import os
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 
-def get_memory_root() -> Path:
-    """Detect memory root based on installed platform directories."""
-    home = Path.home()
-    codex_root = home / '.codex'
-    if codex_root.exists():
-        return codex_root / 'memory'
-    gemini_root = home / '.gemini'
-    if gemini_root.exists():
-        return gemini_root / 'memory'
-    return codex_root / 'memory'
+def get_data_dir(cli_data_dir: Optional[str] = None) -> Path:
+    """Resolve AMS data dir with CLI > env > default precedence."""
+    if cli_data_dir:
+        return Path(cli_data_dir).expanduser()
+
+    data_dir = os.environ.get('AI_MEMORY_DATA_DIR') or os.environ.get('AMS_DATA_DIR')
+    if data_dir:
+        return Path(data_dir).expanduser()
+
+    memory_root = os.environ.get('AI_MEMORY_ROOT') or os.environ.get('AMS_MEMORY_ROOT')
+    if memory_root:
+        return Path(memory_root).expanduser() / 'data'
+
+    return Path.home() / '.ai-memory' / 'data'
 
 
-# 数据库路径
-DB_PATH = get_memory_root() / 'conversations.db'
+def get_db_path(data_dir: Path) -> Path:
+    return data_dir / 'conversations.db'
 
 
-def init_db():
+def init_db(db_path: Path):
     """初始化数据库，创建表结构"""
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     # 主表
@@ -61,6 +66,7 @@ def init_db():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_file_path ON conversations(file_path)')
     
     # 对话轮次表（用于精确搜索）
     cursor.execute('''
@@ -85,7 +91,7 @@ def init_db():
     conn.close()
 
 
-def add_conversation(metadata_path: str, file_path: str):
+def add_conversation(db_path: Path, metadata_path: str, file_path: str):
     """添加对话记录到索引"""
     with open(metadata_path, 'r', encoding='utf-8') as f:
         metadata = json.load(f)
@@ -96,8 +102,17 @@ def add_conversation(metadata_path: str, file_path: str):
     turns = metadata.get('turns', [])
     first_message = turns[0].get('first_line', '') if turns else ''
     
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+
+    # 幂等更新：同一归档文件重复入库时覆盖旧记录
+    cursor.execute('SELECT id FROM conversations WHERE file_path = ?', (file_path,))
+    existing = cursor.fetchone()
+    if existing:
+        existing_id = existing[0]
+        cursor.execute('DELETE FROM turns WHERE conversation_id = ?', (existing_id,))
+        cursor.execute('DELETE FROM conversations_fts WHERE rowid = ?', (existing_id,))
+        cursor.execute('DELETE FROM conversations WHERE id = ?', (existing_id,))
     
     # 插入主记录
     cursor.execute('''
@@ -124,18 +139,18 @@ def add_conversation(metadata_path: str, file_path: str):
     conn.close()
     
     # 导出 JSON 备份
-    export_json_backup()
+    export_json_backup(db_path)
     
     print(f"✅ 已添加到索引: {title}")
     print(f"   ID: {conversation_id}")
     print(f"   轮次: {len(turns)}")
 
 
-def export_json_backup():
+def export_json_backup(db_path: Path):
     """导出 JSON 备份文件"""
-    backup_path = DB_PATH.parent / 'index_backup.json'
+    backup_path = db_path.parent / 'index_backup.json'
     
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -170,37 +185,48 @@ def export_json_backup():
 
 
 
-def search_conversations(keyword: str = None, date_range: str = None, project: str = None):
+def search_conversations(db_path: Path, keyword: str = None, date_range: str = None, project: str = None):
     """搜索对话记录"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    
+
+    filters = []
+    params = []
+
     if keyword:
-        # 全文搜索
-        cursor.execute('''
+        sql = '''
             SELECT c.id, c.title, c.archive_time, c.turn_count, c.file_path, c.first_message
             FROM conversations c
             JOIN conversations_fts fts ON c.id = fts.rowid
             WHERE conversations_fts MATCH ?
-            ORDER BY c.archive_time DESC
-        ''', (keyword,))
-    elif date_range:
-        # 日期范围搜索
-        start_date, end_date = date_range.split(',')
-        cursor.execute('''
-            SELECT id, title, archive_time, turn_count, file_path, first_message
-            FROM conversations
-            WHERE archive_time BETWEEN ? AND ?
-            ORDER BY archive_time DESC
-        ''', (start_date, end_date + ' 23:59'))
+        '''
+        params.append(keyword)
+        if project:
+            sql += ' AND c.project_path LIKE ?'
+            params.append(f'%{project}%')
+        if date_range:
+            start_date, end_date = date_range.split(',')
+            sql += ' AND c.archive_time BETWEEN ? AND ?'
+            params.extend([start_date, end_date + ' 23:59'])
+        sql += ' ORDER BY c.archive_time DESC'
+        cursor.execute(sql, params)
     else:
-        # 列出所有
-        cursor.execute('''
+        if date_range:
+            start_date, end_date = date_range.split(',')
+            filters.append('archive_time BETWEEN ? AND ?')
+            params.extend([start_date, end_date + ' 23:59'])
+        if project:
+            filters.append('project_path LIKE ?')
+            params.append(f'%{project}%')
+
+        sql = '''
             SELECT id, title, archive_time, turn_count, file_path, first_message
             FROM conversations
-            ORDER BY archive_time DESC
-            LIMIT 20
-        ''')
+        '''
+        if filters:
+            sql += ' WHERE ' + ' AND '.join(filters)
+        sql += ' ORDER BY archive_time DESC LIMIT 20'
+        cursor.execute(sql, params)
     
     results = cursor.fetchall()
     conn.close()
@@ -219,9 +245,9 @@ def search_conversations(keyword: str = None, date_range: str = None, project: s
         print()
 
 
-def list_recent(limit: int = 10):
+def list_recent(db_path: Path, limit: int = 10):
     """列出最近的对话记录"""
-    search_conversations()
+    search_conversations(db_path)
 
 
 def main():
@@ -233,22 +259,26 @@ def main():
     parser.add_argument('--keyword', help='搜索关键词 (search 操作)')
     parser.add_argument('--date-range', help='日期范围，格式: 开始,结束 (search 操作)')
     parser.add_argument('--project', help='按项目路径过滤 (search 操作)')
+    parser.add_argument('--data-dir', help='AMS data 目录（默认 ~/.ai-memory/data）')
     args = parser.parse_args()
     
+    data_dir = get_data_dir(args.data_dir)
+    db_path = get_db_path(data_dir)
+
     # 确保数据库已初始化
-    init_db()
+    init_db(db_path)
     
     if args.action == 'init':
-        print(f"✅ 数据库已初始化: {DB_PATH}")
+        print(f"✅ 数据库已初始化: {db_path}")
     elif args.action == 'add':
         if not args.metadata or not args.file:
             print("错误: add 操作需要 --metadata 和 --file 参数")
             return
-        add_conversation(args.metadata, args.file)
+        add_conversation(db_path, args.metadata, args.file)
     elif args.action == 'search':
-        search_conversations(keyword=args.keyword, date_range=args.date_range, project=args.project)
+        search_conversations(db_path, keyword=args.keyword, date_range=args.date_range, project=args.project)
     elif args.action == 'list':
-        list_recent()
+        list_recent(db_path)
 
 
 if __name__ == '__main__':

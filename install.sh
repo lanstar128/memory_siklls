@@ -12,8 +12,11 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # ==================== 全局变量 ====================
-MEMORY_ROOT="$HOME/.ai-memory"
-SKILLS_REPO="https://github.com/lanstar128/AI_memory_siklls.git"
+MEMORY_ROOT="${AMS_MEMORY_ROOT:-$HOME/.ai-memory}"
+SKILLS_REPO="${AMS_SKILLS_REPO:-https://github.com/lanstar128/AI_memory_siklls.git}"
+PRESET_DATA_REPO="${AMS_DATA_REPO:-}"
+SKIP_AUTH_SETUP="${AMS_SKIP_AUTH:-0}"
+SKIP_DATA_REPO_SETUP="${AMS_SKIP_DATA_REPO:-0}"
 
 # 环境检测结果
 OS_TYPE=""
@@ -22,8 +25,12 @@ HAS_SSH_KEY=false
 HAS_GH_AUTH=false
 HAS_GH_CLI=false
 
-# 为 curl | bash 模式准备 TTY 输入
-exec 3</dev/tty 2>/dev/null || exec 3<&0
+# 为 curl | bash 模式准备 TTY 输入（非交互环境回退 stdin）
+if { exec 3</dev/tty; } 2>/dev/null; then
+    :
+else
+    exec 3<&0
+fi
 
 # ==================== 第一步：环境检测 ====================
 detect_environment() {
@@ -216,8 +223,41 @@ create_link() {
     esac
 }
 
+link_codex_skill_entries() {
+    local source_root=$1
+    local codex_skills_dir="$HOME/.codex/skills"
+
+    [ -d "$HOME/.codex" ] || return 0
+    [ -d "$source_root" ] || return 0
+
+    mkdir -p "$codex_skills_dir"
+
+    echo "  为 Codex 注入 AMS 技能（保留现有 ~/.codex/skills 内容）..."
+    for skill_dir in "$source_root"/*; do
+        [ -d "$skill_dir" ] || continue
+        local name
+        name=$(basename "$skill_dir")
+        local target="$codex_skills_dir/$name"
+
+        if [ -L "$target" ]; then
+            rm "$target"
+        elif [ -e "$target" ]; then
+            echo -e "  ${YELLOW}!${NC} Codex 已存在同名技能，跳过: $name"
+            continue
+        fi
+
+        ln -s "$skill_dir" "$target"
+        echo -e "  ${GREEN}+${NC} Codex 技能: $name"
+    done
+}
+
 # ==================== 第二步：配置 Git 授权 ====================
 setup_git_auth() {
+    if [ "$SKIP_AUTH_SETUP" = "1" ]; then
+        echo "  已通过 AMS_SKIP_AUTH=1 跳过 GitHub 授权配置"
+        return
+    fi
+
     # 如果已有授权，跳过
     if [ "$HAS_SSH_KEY" = true ] || [ "$HAS_GH_AUTH" = true ]; then
         return
@@ -273,6 +313,23 @@ setup_git_auth() {
     fi
 }
 
+ensure_data_layout() {
+    mkdir -p "$MEMORY_ROOT/data/conversations" "$MEMORY_ROOT/data/knowledge" "$MEMORY_ROOT/data/profiles" "$MEMORY_ROOT/data/projects" "$MEMORY_ROOT/data/skills"
+
+    local gitignore="$MEMORY_ROOT/data/.gitignore"
+    if [ ! -f "$gitignore" ]; then
+        cat > "$gitignore" <<'EOF'
+.DS_Store
+*.log
+__pycache__/
+secrets.env
+*.tmp
+EOF
+    else
+        grep -qxF 'secrets.env' "$gitignore" || echo 'secrets.env' >> "$gitignore"
+    fi
+}
+
 # ==================== 第三步：安装技能仓库 ====================
 install_skills_repo() {
     echo -e "${YELLOW}[1/4] 安装技能仓库...${NC}"
@@ -298,6 +355,14 @@ setup_data_repo() {
     
     if [ -d "$MEMORY_ROOT/data/.git" ]; then
         echo -e "  ${GREEN}✓${NC} 私人数据仓库已存在"
+        ensure_data_layout
+        return
+    fi
+
+    if [ "$SKIP_DATA_REPO_SETUP" = "1" ]; then
+        echo "  已通过 AMS_SKIP_DATA_REPO=1 跳过私人仓库配置"
+        ensure_data_layout
+        echo -e "  ${YELLOW}⚠️${NC} 当前为本地模式（未绑定远程仓库）"
         return
     fi
     
@@ -313,12 +378,18 @@ setup_data_repo() {
     
     while true; do
         printf "  仓库地址 (直接回车跳过): "
-        read data_repo <&3
+        if [ -n "$PRESET_DATA_REPO" ]; then
+            data_repo="$PRESET_DATA_REPO"
+            echo "$data_repo"
+            PRESET_DATA_REPO=""
+        else
+            read data_repo <&3
+        fi
         
         # 跳过
         if [ -z "$data_repo" ]; then
             echo "  跳过私人仓库配置"
-            mkdir -p "$MEMORY_ROOT/data/conversations" "$MEMORY_ROOT/data/knowledge"
+            ensure_data_layout
             echo -e "  ${YELLOW}⚠️${NC} 已创建本地目录，稍后可手动关联仓库"
             return
         fi
@@ -336,13 +407,13 @@ setup_data_repo() {
             
             mkdir -p "$MEMORY_ROOT/data"
             if git clone --quiet "$data_repo" "$MEMORY_ROOT/data" 2>/dev/null; then
+                ensure_data_layout
                 echo -e "  ${GREEN}✓${NC} 私人数据仓库已克隆"
             else
                 cd "$MEMORY_ROOT/data"
                 git init --quiet
                 git remote add origin "$data_repo"
-                mkdir -p conversations knowledge
-                echo -e ".DS_Store\n*.log\n__pycache__/" > .gitignore
+                ensure_data_layout
                 git add .
                 git commit -m "Initial: AI memory data" --quiet
                 git branch -M main
@@ -356,7 +427,7 @@ setup_data_repo() {
             printf "  是否重试？[y/n]: "
             read retry <&3
             [[ "$retry" != "y" && "$retry" != "Y" ]] && {
-                mkdir -p "$MEMORY_ROOT/data/conversations" "$MEMORY_ROOT/data/knowledge"
+                ensure_data_layout
                 echo -e "  ${YELLOW}⚠️${NC} 已创建本地目录"
                 return
             }
@@ -373,7 +444,7 @@ create_tool_links() {
     # 确保刷新脚本可执行
     if [ -f "$MEMORY_ROOT/skills/scripts/refresh_skills.sh" ]; then
         chmod +x "$MEMORY_ROOT/skills/scripts/refresh_skills.sh"
-        bash "$MEMORY_ROOT/skills/scripts/refresh_skills.sh"
+        AMS_MEMORY_ROOT="$MEMORY_ROOT" bash "$MEMORY_ROOT/skills/scripts/refresh_skills.sh"
     else
         echo -e "  ${RED}❌ 未找到刷新脚本，跳过聚合${NC}"
     fi
@@ -386,8 +457,10 @@ create_tool_links() {
     [ -d "$HOME/.gemini" ] && create_link "$HOME/.gemini" "$HOME/.gemini/skills" "Gemini CLI" "$SKILLS_TARGET"
     [ -d "$HOME/.gemini/antigravity" ] && create_link "$HOME/.gemini/antigravity" "$HOME/.gemini/antigravity/skills" "Antigravity IDE" "$SKILLS_TARGET"
     [ -d "$HOME/.claude" ] && create_link "$HOME/.claude" "$HOME/.claude/skills" "Claude Code" "$SKILLS_TARGET"
-    [ -d "$HOME/.codex" ] && create_link "$HOME/.codex" "$HOME/.codex/skills" "Codex CLI" "$SKILLS_TARGET"
+    link_codex_skill_entries "$SKILLS_TARGET"
     [ -d "$HOME/.iflow" ] && create_link "$HOME/.iflow" "$HOME/.iflow/skills" "iFlow CLI" "$SKILLS_TARGET"
+
+    return 0
 }
 
 # ==================== 第六步：初始化配置 ====================
@@ -395,6 +468,7 @@ init_config() {
     echo ""
     echo -e "${YELLOW}[4/4] 初始化配置...${NC}"
     mkdir -p "$MEMORY_ROOT/models"
+    ensure_data_layout
     echo -e "  ${GREEN}✓${NC} 模型目录就绪"
 }
 
